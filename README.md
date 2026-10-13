@@ -36,7 +36,7 @@ Det tar ca. 15 minutter. Brukerne trenger ikke gjøre noe av dette.
 
 **1. Publiser siden (GitHub Pages)**
 Legg repoet på GitHub → *Settings* → *Pages* → *Source:* **GitHub Actions**.
-Workflowen `pages.yml` publiserer `web/` til `https://<brukernavn>.github.io/mailmap/`.
+Workflowen `pages.yml` publiserer `web/` til `https://danishk918.github.io/mailmap/`.
 
 **2. Google (Gmail)**
 1. [console.cloud.google.com](https://console.cloud.google.com) → nytt prosjekt «mailmap».
@@ -45,14 +45,14 @@ Workflowen `pages.yml` publiserer `web/` til `https://<brukernavn>.github.io/mai
 4. *Data access* → legg til `gmail.metadata` og `gmail.send`.
 5. *Audience* → la stå på **Testing**, og legg til Gmail-adressene som skal teste.
 6. *Clients* → *Create client* → **Web application** → *Authorized JavaScript origins*:
-   `https://<brukernavn>.github.io` og `http://localhost:8000`.
+   `https://danishk918.github.io` og `http://localhost:8000`.
 7. Kopier *Client ID* inn i `web/config.js` → `googleClientId`.
 
 **3. Microsoft (Outlook/Hotmail)**
 1. [portal.azure.com](https://portal.azure.com) → *App registrations* → *New registration*.
 2. *Supported account types:* **Accounts in any organizational directory and personal Microsoft accounts**.
 3. *Redirect URI:* plattform **Single-page application (SPA)** →
-   `https://<brukernavn>.github.io/mailmap/` (legg også til `http://localhost:8000/` under *Authentication*).
+   `https://danishk918.github.io/mailmap/` (legg også til `http://localhost:8000/` under *Authentication*).
 4. *API permissions* → *Microsoft Graph* → *Delegated* → `Mail.Read`, `Mail.Send` (`User.Read` er der fra før).
 5. Kopier *Application (client) ID* inn i `web/config.js` → `microsoftClientId`.
 
@@ -75,7 +75,7 @@ og lage en lokal HTML-rapport.
 ### Installer
 
 ```bash
-git clone https://github.com/<ditt-brukernavn>/mailmap.git
+git clone https://github.com/Danishk918/mailmap.git
 cd mailmap
 python3 -m pip install -e .          # Python 3.10+
 ```
