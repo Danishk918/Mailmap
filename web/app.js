@@ -281,6 +281,8 @@ const safeHttps = u => { try { return new URL(u).protocol === "https:" ? u : nul
 
 const session = { provider: null, token: null, email: "" };
 let items = [], state = {}, picked = new Set(), view = "sub", shown = 50;
+const fresh = new Set();   // rows that should play the postmark animation once
+const stay = new Set();    // stamped rows kept in the "Abonnert" list until the tab changes
 const storeKey = () => "mailmap-done:" + session.email;
 const loadDone = () => { try { return JSON.parse(localStorage.getItem(storeKey()) || "{}"); } catch { return {}; } };
 const saveDone = () => { if (session.provider === Demo) return; try {
@@ -323,7 +325,7 @@ function render(){
   a.textContent = `Abonnert ${subs.length}`; b.textContent = `Avmeldt ${done.length}`; c.textContent = `Kontoer ${acc.length}`;
   [...$("tabs").children].forEach(x => x.setAttribute("aria-pressed", x.dataset.v === view));
 
-  const rows = view === "sub" ? subs : view === "done" ? done : acc;
+  const rows = view === "sub" ? items.filter(s => s.kind === "sub" && (state[s.id] !== "done" || stay.has(s.id))) : view === "done" ? done : acc;
   const list = $("list"); list.replaceChildren();
   if (!rows.length) list.append(el("li","empty", view === "sub" ? "Ingen abonnementer igjen." : view === "done" ? "Du har ikke meldt deg av noe ennå." : "Ingen kontoer funnet."));
   rows.slice(0, shown).forEach(s => list.append(view === "acc" ? accRow(s) : subRow(s)));
@@ -340,7 +342,8 @@ function meta(s){ return `${n(s.count)} e-poster${s.last ? ", sist " + nb.format
 
 function subRow(s){
   const li = el("li","row"), st = state[s.id];
-  if (view === "sub") {
+  if (view === "sub" && st === "done") li.append(el("span", "cbspace"));
+  if (view === "sub" && st !== "done") {
     const cb = el("input"); cb.type = "checkbox"; cb.checked = picked.has(s.id); cb.setAttribute("aria-label", "Velg " + s.name);
     cb.disabled = st === "busy";
     cb.onchange = () => { cb.checked ? picked.add(s.id) : picked.delete(s.id); render(); };
@@ -349,7 +352,7 @@ function subRow(s){
   li.append(el("div","ava", s.name.trim()[0]?.toUpperCase() || "?"));
   const who = el("div","who"); who.append(el("b","", s.name), el("span","", meta(s)));
   const act = el("div","act");
-  if (st === "done") act.append(el("span","state","Avmeldt"));
+  if (st === "done") { act.append(el("span", fresh.has(s.id) ? "state" : "state still", "Avmeldt")); fresh.delete(s.id); }
   else if (st === "busy") act.append(el("span","state wait","Melder av …"));
   else if (st === "fail") {
     act.append(el("span","state bad","Feilet"));
@@ -390,7 +393,7 @@ async function run(list){
   render();
   let ok = 0, bad = 0;
   await pool(auto, 4, async s => {
-    try { const r = await unsubscribe(s); state[s.id] = r === "done" ? "done" : state[s.id]; ok++; }
+    try { const r = await unsubscribe(s); if (r === "done") { state[s.id] = "done"; fresh.add(s.id); stay.add(s.id); } ok++; }
     catch (e) { state[s.id] = "fail"; bad++; if (/utløpt/.test(e.message)) toast(e.message); }
     saveDone(); render();
   });
@@ -403,7 +406,7 @@ async function run(list){
 $("gBtn").onclick = () => Google.signIn();
 $("mBtn").onclick = () => Microsoft.signIn();
 $("demoBtn").onclick = () => start(Demo, "demo");
-$("tabs").onclick = e => { const b = e.target.closest("button"); if (!b) return; view = b.dataset.v; shown = 50; render(); };
+$("tabs").onclick = e => { const b = e.target.closest("button"); if (!b) return; view = b.dataset.v; shown = 50; stay.clear(); render(); };
 $("more").onclick = () => { shown += 50; render(); };
 $("bulk").onclick = () => run(items.filter(s => picked.has(s.id) && state[s.id] !== "done" && state[s.id] !== "busy"));
 $("out").onclick = () => {
