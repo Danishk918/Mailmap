@@ -303,8 +303,9 @@ const storeKey = () => "mailmap-sent:" + session.email;
 const loadDone = () => {
   try {
     sentLog = JSON.parse(localStorage.getItem(storeKey()) || "{}");
-    const old = JSON.parse(localStorage.getItem("mailmap-done:" + session.email) || "{}");   // earlier format
-    for (const k of Object.keys(old)) if (!sentLog[k]) sentLog[k] = { t: null, via: [] };
+    // Unsubscribes stored by the first version had no timestamp and used only one channel;
+    // drop them so those senders show up again and can be re-sent with the current method.
+    localStorage.removeItem("mailmap-done:" + session.email);
   } catch { sentLog = {}; }
   const st = {}; for (const k of Object.keys(sentLog)) st[k] = "done"; return st;
 };
