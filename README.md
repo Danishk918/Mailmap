@@ -22,6 +22,16 @@ avmeldingslenke) og **annet**. Du får en rapport der du velger *behold* eller *
 | One-click etter RFC 8058, ellers manuell bekreftelse | Ekte ett-klikks avmelding sendes som POST. Vanlige lenker åpnes i nettleseren så du ser hva du bekrefter. Kun https, og redirect til http nektes. |
 | Ingen avhengigheter | Kun Python standardbibliotek (`msal` er valgfritt, bare for Outlook). |
 
+## Nettsiden (ingen installasjon)
+
+Åpne `web/index.html` i nettleseren, eller legg den ut gratis med GitHub Pages
+(Settings → Pages → mappe `/web`). Dra inn en `.mbox`- eller `.eml`-fil, så skjer
+resten i nettleseren: filen leses i biter på 4 MB (fungerer med eksporter på flere GB),
+bare headere tolkes, og ingenting sendes noe sted. Valgene dine huskes lokalt i nettleseren.
+
+Nettsiden kan ikke bruke IMAP, så for direkte skanning av innboksen og automatisk
+ett-klikks avmelding brukes kommandolinjeversjonen under.
+
 ## Installer
 
 ```bash

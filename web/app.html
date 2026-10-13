@@ -1,0 +1,634 @@
+<title>Mailmap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a sorting desk. Drop zone on top, a summary strip, then one sorted list of
+   senders with a sticky decision bar; the plan collects on the right on wide screens. */
+:root{
+  --bg:#e9edf1; --surface:#fbfcfd; --sunk:#dfe5eb; --line:#c9d2db;
+  --ink:#121b24; --mute:#55626f; --faint:#8592a0;
+  --accent:#1d47c4; --accent-ink:#ffffff; --accent-soft:#dbe4fb;
+  --konto:#7f2a59; --konto-soft:#f3e1ea;
+  --nyhet:#0c6b5f; --nyhet-soft:#d8eeea;
+  --annet:#55626f; --annet-soft:#e3e8ed;
+  --keep:#0c6b5f; --drop:#b0361d; --drop-soft:#f6e0da;
+  --display:"Schibsted Grotesk",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --body:"Schibsted Grotesk",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f151b; --surface:#161e26; --sunk:#0b1015; --line:#2a3642;
+  --ink:#e6ecf2; --mute:#9aa8b6; --faint:#6b7988;
+  --accent:#86a4ff; --accent-ink:#0b1220; --accent-soft:#1d2a4d;
+  --konto:#e59cc2; --konto-soft:#3a1d2d;
+  --nyhet:#6fd0c0; --nyhet-soft:#12332e;
+  --annet:#9aa8b6; --annet-soft:#222c36;
+  --keep:#6fd0c0; --drop:#f08e74; --drop-soft:#3d2018;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f151b; --surface:#161e26; --sunk:#0b1015; --line:#2a3642;
+  --ink:#e6ecf2; --mute:#9aa8b6; --faint:#6b7988;
+  --accent:#86a4ff; --accent-ink:#0b1220; --accent-soft:#1d2a4d;
+  --konto:#e59cc2; --konto-soft:#3a1d2d;
+  --nyhet:#6fd0c0; --nyhet-soft:#12332e;
+  --annet:#9aa8b6; --annet-soft:#222c36;
+  --keep:#6fd0c0; --drop:#f08e74; --drop-soft:#3d2018;
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:28px 64px}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--mono);font-size:.86em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* header */
+.top{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:24px;align-items:stretch}
+.brand h1{font:800 clamp(34px,6vw,54px)/.95 var(--display);letter-spacing:-.03em;margin:0 0 14px}
+.brand h1 span{color:var(--accent)}
+.brand p{margin:0 0 12px;color:var(--mute);max-width:46ch;text-wrap:pretty}
+.facts{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:16px;padding:0;list-style:none;color:var(--mute);font-size:13px}
+.facts li::before{content:"✓ ";color:var(--keep);font-weight:600}
+
+/* drop zone: styled like an address label */
+.drop{position:relative;border:1.5px dashed var(--line);border-radius:14px;background:var(--surface);
+  padding:22px;display:flex;flex-direction:column;gap:12px;justify-content:center;transition:border-color .15s,background .15s}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop h2{font:600 19px/1.25 var(--display);margin:0;text-wrap:balance}
+.drop .how{font-size:13px;color:var(--mute);margin:0}
+.drop .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);
+  padding:8px 13px;border-radius:8px;cursor:pointer;text-decoration:none;color:var(--ink);font-weight:500;font-size:14px;line-height:1.2;white-space:nowrap}
+.btn:hover{border-color:var(--mute)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.small{padding:6px 10px;font-size:13px}
+.btn[aria-pressed="true"].keep{background:var(--nyhet-soft);border-color:var(--keep);color:var(--keep)}
+.btn[aria-pressed="true"].drop-b{background:var(--drop-soft);border-color:var(--drop);color:var(--drop)}
+.prog{height:6px;background:var(--sunk);border-radius:99px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+.status{font-size:13px;color:var(--mute);min-height:1.5em}
+.status.err{color:var(--drop)}
+.sample{display:flex;gap:10px;align-items:center;background:var(--accent-soft);color:var(--ink);
+  border-radius:8px;padding:8px 12px;font-size:13px;margin-top:22px}
+.sample b{font-weight:600}
+
+/* summary strip */
+.strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-top:18px}
+.strip div{background:var(--surface);padding:12px 14px}
+.strip b{display:block;font:800 26px/1.1 var(--display);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.strip span{font-size:12px;color:var(--mute);letter-spacing:.02em}
+
+/* main grid */
+.main{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;margin-top:22px;align-items:start}
+.tools{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);
+  padding-block:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-bottom:1px solid var(--line)}
+.tools input[type=search]{flex:1 1 200px;min-width:0;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:none;padding:7px 11px;cursor:pointer;font-size:13px;color:var(--mute)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.tools select{padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:13px}
+.done-line{font-size:12px;color:var(--mute);margin-left:auto;font-variant-numeric:tabular-nums}
+
+.list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.item{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  display:grid;grid-template-columns:minmax(0,1fr) 150px 280px;gap:6px 18px;padding:13px 16px;align-items:center}
+.item.d-behold{border-left:4px solid var(--keep);padding-left:13px}
+.item.d-avmeld,.item.d-slett{border-left:4px solid var(--drop);padding-left:13px}
+.item.d-avmeld .name,.item.d-slett .name{text-decoration:line-through;text-decoration-color:var(--drop);text-decoration-thickness:1.5px}
+.who{min-width:0}
+.name{font-weight:600;font-size:15.5px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.chip{font:500 11px/1 var(--body);letter-spacing:.04em;text-transform:uppercase;padding:4px 7px;border-radius:99px}
+.chip.konto{background:var(--konto-soft);color:var(--konto)}
+.chip.nyhetsbrev{background:var(--nyhet-soft);color:var(--nyhet)}
+.chip.annet{background:var(--annet-soft);color:var(--annet)}
+.dom{color:var(--mute);font-family:var(--mono);font-size:12.5px;overflow-wrap:anywhere}
+.subj{color:var(--mute);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.vol{font-size:12px;color:var(--mute);font-variant-numeric:tabular-nums}
+.vol .bar{height:5px;border-radius:99px;background:var(--sunk);margin:4px 0 3px;overflow:hidden}
+.vol .bar i{display:block;height:100%;background:var(--accent);opacity:.75}
+.acts{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+details.more{grid-column:1/-1;font-size:13px}
+details.more summary{cursor:pointer;color:var(--faint);font-size:12px;width:max-content}
+.kv{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 12px;margin-top:8px;padding:10px 12px;background:var(--sunk);border-radius:8px}
+.kv dt{color:var(--faint);font-family:var(--mono);font-size:12px}
+.kv dd{margin:0;font-family:var(--mono);font-size:12px;overflow-wrap:anywhere}
+.empty{padding:40px 16px;text-align:center;color:var(--mute);background:var(--surface);border:1px dashed var(--line);border-radius:var(--r)}
+.more-btn{align-self:center;margin-top:6px}
+
+/* plan */
+.plan{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.plan h3{margin:0;font:600 17px/1.2 var(--display)}
+.plan .meter{display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--sunk)}
+.plan .meter i{display:block;height:100%}
+.legend{display:grid;grid-template-columns:auto 1fr auto;gap:4px 8px;font-size:13px;align-items:center;font-variant-numeric:tabular-nums}
+.dot{width:9px;height:9px;border-radius:50%}
+.plan ol{margin:0;padding-left:18px;font-size:13px;color:var(--mute);display:grid;gap:4px}
+.plan textarea{width:100%;min-height:150px;resize:vertical;border:1px solid var(--line);border-radius:8px;padding:10px;font:12.5px/1.45 var(--mono);background:var(--sunk);color:var(--ink)}
+.plan label{font-size:12px;color:var(--mute);letter-spacing:.03em;text-transform:uppercase}
+.plan input{width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.note{font-size:12px;color:var(--faint);margin:0}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);
+  padding:9px 14px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.on{opacity:1}
+footer{margin-top:40px;color:var(--mute);font-size:13px;display:grid;gap:6px;max-width:72ch}
+footer code{font-family:var(--mono);font-size:12px;background:var(--sunk);padding:1px 5px;border-radius:4px}
+
+@media (max-width:1060px) and (min-width:561px){.item{grid-template-columns:minmax(0,1fr) 130px}.acts{grid-column:1/-1;justify-content:flex-start}}
+@media (max-width:900px){
+  .top{grid-template-columns:minmax(0,1fr)}
+  .main{grid-template-columns:minmax(0,1fr)}
+  .plan{position:static}
+  .strip{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .strip div:nth-child(n+4){display:none}
+}
+@media (max-width:560px){
+  .item{grid-template-columns:minmax(0,1fr)}
+  .acts{justify-content:flex-start}
+  .done-line{margin-left:0;width:100%}
+}
+</style>
+
+<div class="wrap">
+  <section class="top">
+    <div class="brand">
+      <h1>Hvor er e-posten<br>din <span>registrert?</span></h1>
+      <p>Last inn en eksport av innboksen din. Mailmap finner hver tjeneste som har sendt deg e-post, og du bestemmer hva du vil beholde, melde deg av eller slette.</p>
+      <ul class="facts">
+        <li>Alt skjer i nettleseren</li>
+        <li>Kun headere leses</li>
+        <li>Ingenting lastes opp</li>
+      </ul>
+    </div>
+
+    <div class="drop" id="drop">
+      <h2>Slipp .mbox- eller .eml-filer her</h2>
+      <p class="how">Gmail: takeout.google.com → velg kun «E-post» → pakk ut zip-filen. Du får en fil som slutter på <span class="mono">.mbox</span>.</p>
+      <div class="row">
+        <label class="btn primary" for="file">Velg filer</label>
+        <input id="file" type="file" accept=".mbox,.mbx,.eml,.txt" multiple hidden>
+        <button class="btn" id="cancel" hidden>Avbryt</button>
+      </div>
+      <div class="prog" aria-hidden="true"><i id="bar"></i></div>
+      <div class="status" id="status" role="status">Klar. Store eksporter (flere GB) går fint, de leses i biter.</div>
+    </div>
+  </section>
+
+  <div class="sample" id="sampleNote"><b>Eksempeldata.</b> Dette er oppdiktede tjenester som viser hvordan det ser ut. Last inn din egen eksport for å se dine.</div>
+
+  <div class="strip" aria-label="Oppsummering">
+    <div><b id="sMsg">0</b><span>e-poster lest</span></div>
+    <div><b id="sSvc">0</b><span>tjenester</span></div>
+    <div><b id="sAcc">0</b><span>kontoer</span></div>
+    <div><b id="sNews">0</b><span>nyhetsbrev</span></div>
+    <div><b id="sOne">0</b><span>med avmeldingslenke</span></div>
+  </div>
+
+  <div class="main">
+    <section aria-label="Tjenester">
+      <div class="tools">
+        <input type="search" id="q" placeholder="Søk etter tjeneste, domene eller emne" aria-label="Søk">
+        <div class="seg" role="group" aria-label="Type" id="seg">
+          <button data-c="" aria-pressed="true">Alle</button>
+          <button data-c="konto" aria-pressed="false">Kontoer</button>
+          <button data-c="nyhetsbrev" aria-pressed="false">Nyhetsbrev</button>
+          <button data-c="annet" aria-pressed="false">Annet</button>
+        </div>
+        <select id="sort" aria-label="Sorter">
+          <option value="count">Flest e-poster</option>
+          <option value="last">Sist hørt fra</option>
+          <option value="old">Lengst siden</option>
+          <option value="name">Navn A–Å</option>
+          <option value="open">Ikke bestemt først</option>
+        </select>
+        <span class="done-line" id="doneLine"></span>
+      </div>
+      <div class="list" id="list"></div>
+    </section>
+
+    <aside class="plan" aria-label="Din plan">
+      <h3>Din opprydding</h3>
+      <div class="meter" id="meter"></div>
+      <div class="legend" id="legend"></div>
+      <ol id="steps"></ol>
+      <button class="btn small" id="copyPlan">Kopier plan som tekst</button>
+
+      <label for="gdprName">GDPR-sletting</label>
+      <input id="gdprName" placeholder="Ditt navn">
+      <input id="gdprAddr" placeholder="E-postadressen kontoen er på" type="email">
+      <textarea id="gdprText" aria-label="Tekst for sletteforespørsel" readonly></textarea>
+      <button class="btn small" id="copyGdpr">Kopier tekst</button>
+      <p class="note">Send teksten til tjenestens personvernadresse (ofte privacy@ eller personvern@). De har én måned på å svare.</p>
+    </aside>
+  </div>
+
+  <footer>
+    <div><b>Slik virker det.</b> Mailmap leser feltene <code>From</code>, <code>Subject</code>, <code>Date</code> og <code>List-Unsubscribe</code>. Avsendere grupperes per domene. Emner som «velkommen», «bekreft» og «passord» tyder på en konto. En <code>List-Unsubscribe</code>-header betyr nyhetsbrev, og <code>List-Unsubscribe-Post</code> betyr at avsenderen støtter ett-klikks avmelding (RFC 8058).</div>
+    <div><b>Vil du skanne rett fra innboksen?</b> Det krever IMAP, som en nettside ikke kan bruke. Bruk kommandolinjeversjonen: <code>mailmap scan --imap deg@gmail.com</code>. Den kan også sende ett-klikks avmelding automatisk.</div>
+  </footer>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+"use strict";
+/* ---------- analysis (port of mailmap/analyze.py) ---------- */
+const ACCOUNT_RE = /\b(welcome|velkommen|verify|verification|bekreft|confirm|activate|aktiver|password|passord|reset|tilbakestill|sign[- ]?in|log ?in|logg inn|innlogging|account|konto|receipt|kvittering|order|ordre|bestilling|security code|sikkerhetskode|engangskode)/i;
+const MULTI = new Set(["co.uk","org.uk","ac.uk","gov.uk","com.au","net.au","co.nz","co.jp","com.br","co.za","com.tr","co.in","com.mx","com.cn"]);
+const WANT = new Set(["from","subject","date","list-unsubscribe","list-unsubscribe-post","delivered-to"]);
+
+function baseDomain(d){
+  const p = d.toLowerCase().trim().replace(/^\.+|\.+$/g,"").split(".").filter(Boolean);
+  if (p.length <= 2) return p.join(".");
+  return MULTI.has(p.slice(-2).join(".")) ? p.slice(-3).join(".") : p.slice(-2).join(".");
+}
+function decodeWords(s){
+  if (!s || s.indexOf("=?") < 0) return s || "";
+  return s.replace(/=\?([^?\s]+)\?([bBqQ])\?([^?]*)\?=(?:\s+(?==\?))?/g, (m, cs, enc, txt) => {
+    try {
+      let bytes;
+      if (enc === "b" || enc === "B") bytes = Uint8Array.from(atob(txt), c => c.charCodeAt(0));
+      else {
+        const t = txt.replace(/_/g, " "), out = [];
+        for (let i = 0; i < t.length; i++) {
+          if (t[i] === "=" && /^[0-9a-f]{2}$/i.test(t.substr(i+1,2))) { out.push(parseInt(t.substr(i+1,2),16)); i += 2; }
+          else out.push(t.charCodeAt(i) & 255);
+        }
+        bytes = Uint8Array.from(out);
+      }
+      return new TextDecoder(cs.split("*")[0].toLowerCase()).decode(bytes);
+    } catch { return m; }
+  });
+}
+// Parse the raw From first, decode only the display name, so an encoded name can't fake the address.
+function parseFrom(raw){
+  raw = (raw || "").trim();
+  let addr = "", name = "";
+  const angle = raw.match(/<\s*([^<>\s]+@[^<>\s]+)\s*>\s*$/);
+  if (angle) { addr = angle[1]; name = raw.slice(0, angle.index).trim().replace(/^"|"$/g, ""); }
+  else { const bare = raw.match(/([^\s<>"(),;:]+@[^\s<>"(),;:]+)/); if (bare) addr = bare[1]; }
+  return { addr: addr.toLowerCase(), name: decodeWords(name).trim() };
+}
+function unsubLinks(v){
+  const links = [...(v || "").matchAll(/<\s*([^>]+?)\s*>/g)].map(m => m[1]);
+  return { https: links.filter(l => /^https:\/\//i.test(l)), mailto: links.filter(l => /^mailto:/i.test(l)) };
+}
+function parseDate(v){ const t = Date.parse(v || ""); return isNaN(t) ? null : t; }
+
+class Analyzer {
+  constructor(){ this.senders = new Map(); this.messages = 0; this.delivered = new Map(); }
+  add(h){
+    this.messages++;
+    const dt = h["delivered-to"]; if (dt) { const a = parseFrom(dt).addr; if (a) this.delivered.set(a, (this.delivered.get(a)||0)+1); }
+    const { addr, name } = parseFrom(h.from);
+    if (!addr.includes("@")) return;
+    const domain = baseDomain(addr.split("@").pop()); if (!domain) return;
+    let s = this.senders.get(domain);
+    if (!s) this.senders.set(domain, s = { domain, addresses:new Set(), names:new Map(), count:0, first:null, last:null,
+      subjects:[], https:null, mailto:null, oneClick:false, acc:0, news:0, selfHits:0 });
+    s.count++; s.addresses.add(addr);
+    if (name && !name.includes("@")) s.names.set(name, (s.names.get(name)||0)+1);
+    const subj = decodeWords(h.subject || "").replace(/\s+/g," ").trim();
+    if (subj && s.subjects.length < 5 && !s.subjects.includes(subj)) s.subjects.push(subj.slice(0,140));
+    if (ACCOUNT_RE.test(subj)) s.acc++;
+    const when = parseDate(h.date);
+    const newest = when == null || s.last == null || when >= s.last;
+    if (when != null) { s.first = s.first == null ? when : Math.min(s.first, when); s.last = s.last == null ? when : Math.max(s.last, when); }
+    const u = unsubLinks(h["list-unsubscribe"]);
+    if (u.https.length || u.mailto.length) {
+      s.news++;
+      if (newest) {
+        if (u.https.length) { s.https = u.https[0]; s.oneClick = /list-unsubscribe=one-click/i.test(h["list-unsubscribe-post"] || ""); }
+        if (u.mailto.length) s.mailto = u.mailto[0];
+      }
+    }
+  }
+  result(extraExclude){
+    // The address mail was delivered to is the owner's; hide their own sent mail.
+    const own = new Set([...this.delivered.keys()].filter(a => this.delivered.get(a) > Math.max(2, this.messages * .05)));
+    for (const a of extraExclude || []) own.add(a);
+    const out = [];
+    for (const s of this.senders.values()) {
+      const real = [...s.addresses].filter(a => !own.has(a));
+      if (!real.length) continue;
+      const names = [...s.names.entries()].sort((a,b)=>b[1]-a[1]).map(e=>e[0]);
+      out.push({ domain:s.domain, name:names[0] || s.domain, names, addresses:real.sort(), count:s.count,
+        first:s.first, last:s.last, subjects:s.subjects, https:s.https, mailto:s.mailto, oneClick:s.oneClick,
+        cat: s.acc ? "konto" : s.news ? "nyhetsbrev" : "annet" });
+    }
+    return out;
+  }
+}
+
+/* ---------- streaming readers ---------- */
+let cancelled = false;
+const CHUNK = 4 * 1024 * 1024;
+
+async function readFileLines(file, onLine, onProgress){
+  const dec = new TextDecoder("utf-8", { fatal:false });
+  let carry = "";
+  for (let off = 0; off < file.size; off += CHUNK) {
+    if (cancelled) throw new Error("avbrutt");
+    const buf = await file.slice(off, off + CHUNK).arrayBuffer();
+    const text = carry + dec.decode(buf, { stream: off + CHUNK < file.size });
+    const lines = text.split("\n");
+    carry = lines.pop();
+    for (const l of lines) onLine(l.endsWith("\r") ? l.slice(0,-1) : l);
+    onProgress(Math.min(off + CHUNK, file.size));
+    await new Promise(r => setTimeout(r, 0));
+  }
+  if (carry) onLine(carry);
+}
+
+function headerCollector(emit){
+  let inHead = false, h = null, cur = null, prevBlank = true, sawHeader = false;
+  const flushHeader = () => { if (cur && WANT.has(cur.k) && !(cur.k in h)) h[cur.k] = cur.v.slice(0, 4000); cur = null; };
+  const finish = () => { if (h) { flushHeader(); if (h.from) emit(h); } h = null; inHead = false; };
+  return {
+    line(l, mbox){
+      if (mbox && prevBlank && l.startsWith("From ")) { finish(); h = {}; inHead = true; sawHeader = false; prevBlank = false; return; }
+      prevBlank = l === "";
+      if (!inHead) return;
+      if (l === "") { if (sawHeader) { flushHeader(); emit(h.from ? h : null); h = null; inHead = false; } return; }
+      if ((l[0] === " " || l[0] === "\t") && cur) { if (cur.v.length < 4000) cur.v += " " + l.trim(); return; }
+      const i = l.indexOf(":");
+      if (i > 0) { flushHeader(); cur = { k: l.slice(0,i).trim().toLowerCase(), v: l.slice(i+1).trim() }; sawHeader = true; }
+    },
+    startSingle(){ h = {}; inHead = true; sawHeader = false; },
+    end(){ finish(); }
+  };
+}
+
+async function scanFiles(files){
+  const an = new Analyzer();
+  const total = files.reduce((a,f)=>a+f.size,0) || 1;
+  let doneBytes = 0;
+  for (const f of files) {
+    if (/\.zip$/i.test(f.name)) throw new Error(`«${f.name}» er en zip-fil. Pakk den ut først, og velg .mbox-filen inni.`);
+    const mbox = !/\.eml$/i.test(f.name);
+    const col = headerCollector(h => { if (h) an.add(h); });
+    if (!mbox) col.startSingle();
+    let sawSep = false;
+    await readFileLines(f, l => {
+      if (mbox && !sawSep && l.startsWith("From ")) sawSep = true;
+      col.line(l, mbox);
+    }, b => {
+      const pct = (doneBytes + b) / total;
+      setProgress(pct, `Leser ${f.name} · ${fmtBytes(doneBytes + b)} av ${fmtBytes(total)} · ${an.messages.toLocaleString("nb-NO")} e-poster`);
+    });
+    col.end();
+    if (mbox && !sawSep) throw new Error(`Fant ingen e-poster i «${f.name}». Er det en .mbox-fil?`);
+    doneBytes += f.size;
+  }
+  return an;
+}
+
+/* ---------- UI state ---------- */
+const $ = id => document.getElementById(id);
+const el = (t, cls, txt) => { const e = document.createElement(t); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+const nb = new Intl.DateTimeFormat("nb-NO", { month:"short", year:"numeric" });
+const fmtD = t => t == null ? "?" : nb.format(new Date(t));
+const fmtBytes = b => b > 1e9 ? (b/1e9).toFixed(1)+" GB" : b > 1e6 ? (b/1e6).toFixed(0)+" MB" : Math.max(1,Math.round(b/1e3))+" kB";
+const safeHttps = u => { try { return new URL(u).protocol === "https:" ? u : null; } catch { return null; } };
+
+let data = [], messages = 0, sample = true;
+let decisions = {};
+const store = {
+  load(){ try { return JSON.parse(localStorage.getItem("mailmap-decisions") || "{}"); } catch { return {}; } },
+  save(){ try { localStorage.setItem("mailmap-decisions", JSON.stringify(decisions)); } catch {} }
+};
+const view = { q:"", cat:"", sort:"count", shown:60 };
+const LABEL = { behold:"Behold", avmeld:"Meld av", slett:"Slett konto" };
+
+function setProgress(p, msg){ $("bar").style.width = (p*100).toFixed(1)+"%"; $("status").textContent = msg; $("status").classList.remove("err"); }
+function toast(msg){ const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(()=>t.classList.remove("on"), 1800); }
+async function copy(text, okMsg, fallbackEl){
+  try { await navigator.clipboard.writeText(text); toast(okMsg); }
+  catch { if (fallbackEl) { fallbackEl.focus(); fallbackEl.select(); } toast("Merk teksten og kopier den manuelt"); }
+}
+
+function setData(list, n, isSample){
+  data = list; messages = n; sample = isSample;
+  $("sampleNote").hidden = !isSample;
+  decisions = isSample ? {} : store.load();
+  view.shown = 60;
+  renderAll();
+}
+
+function decide(domain, d){
+  if (decisions[domain] === d) delete decisions[domain]; else decisions[domain] = d;
+  if (!sample) store.save();
+  renderAll(true);
+}
+
+function renderStrip(){
+  const c = k => data.filter(s => s.cat === k).length;
+  $("sMsg").textContent = messages.toLocaleString("nb-NO");
+  $("sSvc").textContent = data.length.toLocaleString("nb-NO");
+  $("sAcc").textContent = c("konto");
+  $("sNews").textContent = c("nyhetsbrev");
+  $("sOne").textContent = data.filter(s => s.https || s.mailto).length;
+}
+
+function filtered(){
+  const q = view.q.toLowerCase();
+  let l = data.filter(s => (!view.cat || s.cat === view.cat) &&
+    (!q || (s.name+" "+s.domain+" "+s.subjects.join(" ")).toLowerCase().includes(q)));
+  const by = { count:(a,b)=>b.count-a.count, last:(a,b)=>(b.last||0)-(a.last||0), old:(a,b)=>(a.last||0)-(b.last||0),
+    name:(a,b)=>a.name.localeCompare(b.name,"nb"), open:(a,b)=>(!!decisions[a.domain]-!!decisions[b.domain]) || b.count-a.count };
+  return l.sort(by[view.sort]);
+}
+
+function item(s, max){
+  const d = decisions[s.domain];
+  const r = el("article", "item" + (d ? " d-"+d : ""));
+  const who = el("div","who");
+  const nm = el("div","name"); nm.append(el("span","",s.name), el("span","chip "+s.cat, s.cat));
+  who.append(nm, el("div","dom", s.domain));
+  if (s.subjects[0]) who.append(el("div","subj","«"+s.subjects[0]+"»"));
+
+  const vol = el("div","vol");
+  vol.append(el("div","", s.count.toLocaleString("nb-NO")+" e-poster"));
+  const bar = el("div","bar"), bi = el("i"); bi.style.width = Math.max(3, s.count/max*100)+"%"; bar.append(bi);
+  vol.append(bar, el("div","", fmtD(s.first)+" – "+fmtD(s.last)));
+
+  const acts = el("div","acts");
+  const keep = el("button","btn small keep","Behold"); keep.setAttribute("aria-pressed", d==="behold");
+  keep.onclick = () => decide(s.domain, "behold");
+  acts.append(keep);
+  const https = safeHttps(s.https);
+  if (https) {
+    const a = el("a","btn small drop-b", s.oneClick ? "Meld av ↗" : "Åpne avmelding ↗");
+    a.href = https; a.target = "_blank"; a.rel = "noopener noreferrer"; a.setAttribute("aria-pressed", d==="avmeld");
+    a.title = s.oneClick ? "Åpner avsenderens avmeldingsside (støtter ett-klikk)" : "Åpner avsenderens avmeldingsside";
+    a.onclick = () => { if (decisions[s.domain] !== "avmeld") decide(s.domain, "avmeld"); };
+    acts.append(a);
+  } else if (s.mailto) {
+    const b = el("button","btn small drop-b","Kopier avmeldingsadresse"); b.setAttribute("aria-pressed", d==="avmeld");
+    b.onclick = () => { copy(s.mailto.replace(/^mailto:/i,"").split("?")[0], "Adresse kopiert. Send en e-post med emnet «unsubscribe»."); if (decisions[s.domain] !== "avmeld") decide(s.domain,"avmeld"); };
+    acts.append(b);
+  }
+  if (s.cat === "konto" || (!https && !s.mailto)) {
+    const g = el("button","btn small drop-b","Slett konto"); g.setAttribute("aria-pressed", d==="slett");
+    g.onclick = () => { decide(s.domain, "slett"); fillGdpr(s); };
+    acts.append(g);
+  }
+
+  const more = el("details","more"); more.append(el("summary","","Detaljer"));
+  const kv = el("dl","kv");
+  const add = (k,v) => { if (v) kv.append(el("dt","",k), el("dd","",v)); };
+  add("Fra", s.addresses.join(", "));
+  add("Navn", s.names.slice(0,3).join(", "));
+  add("Emner", s.subjects.join(" · "));
+  add("Avmelding", s.https || s.mailto || "ingen List-Unsubscribe");
+  add("Ett-klikk", s.https ? (s.oneClick ? "ja (RFC 8058)" : "nei") : "");
+  more.append(kv);
+  r.append(who, vol, acts, more);
+  return r;
+}
+
+function renderList(){
+  const l = filtered(), list = $("list"); list.replaceChildren();
+  const max = Math.max(1, ...data.map(s=>s.count));
+  if (!l.length) {
+    list.append(el("div","empty", data.length ? "Ingen tjenester passer søket." : "Ingen avsendere funnet i filen."));
+  } else {
+    l.slice(0, view.shown).forEach(s => list.append(item(s, max)));
+    if (l.length > view.shown) {
+      const b = el("button","btn more-btn",`Vis ${Math.min(60, l.length - view.shown)} til (${l.length - view.shown} igjen)`);
+      b.onclick = () => { view.shown += 60; renderList(); };
+      list.append(b);
+    }
+  }
+  const decided = data.filter(s => decisions[s.domain]).length;
+  $("doneLine").textContent = `${decided} av ${data.length} bestemt`;
+}
+
+function renderPlan(){
+  const groups = { behold:[], avmeld:[], slett:[] };
+  for (const s of data) if (decisions[s.domain]) groups[decisions[s.domain]].push(s);
+  const open = data.length - groups.behold.length - groups.avmeld.length - groups.slett.length;
+  const parts = [["behold","var(--keep)",groups.behold.length],["avmeld","var(--drop)",groups.avmeld.length],
+                 ["slett","var(--konto)",groups.slett.length],["open","var(--line)",open]];
+  const m = $("meter"); m.replaceChildren();
+  parts.forEach(([k,c,n]) => { const i = el("i"); i.style.background = c; i.style.width = (n/Math.max(1,data.length)*100)+"%"; m.append(i); });
+  const lg = $("legend"); lg.replaceChildren();
+  [["Beholdes","var(--keep)",groups.behold.length],["Meldes av","var(--drop)",groups.avmeld.length],
+   ["Kontoer som slettes","var(--konto)",groups.slett.length],["Ikke bestemt","var(--line)",open]].forEach(([t,c,n]) => {
+    const d = el("span","dot"); d.style.background = c; lg.append(d, el("span","",t), el("b","",n));
+  });
+  const st = $("steps"); st.replaceChildren();
+  if (groups.avmeld.length) st.append(el("li","",`Trykk «Meld av» hos ${groups.avmeld.length} avsendere. Siden deres åpnes i ny fane.`));
+  if (groups.slett.length) st.append(el("li","",`Send GDPR-sletting til ${groups.slett.length} tjenester (tekst under).`));
+  if (!st.children.length) st.append(el("li","","Gå gjennom listen og velg Behold eller Meld av."));
+}
+
+function planText(){
+  const lines = [`Mailmap-plan ${new Date().toLocaleDateString("nb-NO")}`, ""];
+  for (const [k, t] of [["avmeld","MELD AV"],["slett","SLETT KONTO"],["behold","BEHOLD"]]) {
+    const l = data.filter(s => decisions[s.domain] === k);
+    if (!l.length) continue;
+    lines.push(`${t} (${l.length})`);
+    l.forEach(s => lines.push(`- ${s.name} (${s.domain})${k==="avmeld" && s.https ? " " + s.https : ""}`));
+    lines.push("");
+  }
+  return lines.join("\n");
+}
+
+let gdprService = null;
+function fillGdpr(s){
+  if (s) gdprService = s;
+  const name = $("gdprName").value.trim(), addr = $("gdprAddr").value.trim() || "[din e-postadresse]";
+  const svc = gdprService ? gdprService.name : "[tjeneste]";
+  $("gdprText").value =
+`Emne: Sletting av konto og personopplysninger (GDPR art. 17)
+
+Hei ${svc},
+
+Jeg ber om at dere sletter kontoen min og alle personopplysninger dere har om meg, jf. personvernforordningen (GDPR) artikkel 17.
+
+Kontoen er registrert på: ${addr}
+
+Bekreft skriftlig når slettingen er gjennomført. Etter artikkel 12 skal dere svare uten ugrunnet opphold og senest innen én måned.
+
+Vennlig hilsen
+${name || "[ditt navn]"}`;
+}
+
+function renderAll(keepScroll){
+  renderStrip(); renderList(); renderPlan();
+  if (!keepScroll) fillGdpr();
+}
+
+/* ---------- events ---------- */
+$("q").addEventListener("input", e => { view.q = e.target.value; view.shown = 60; renderList(); });
+$("seg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  view.cat = b.dataset.c; view.shown = 60;
+  [...$("seg").children].forEach(x => x.setAttribute("aria-pressed", x === b));
+  renderList();
+});
+$("sort").addEventListener("change", e => { view.sort = e.target.value; renderList(); });
+$("copyPlan").onclick = () => copy(planText(), "Plan kopiert");
+$("copyGdpr").onclick = () => copy($("gdprText").value, "Tekst kopiert", $("gdprText"));
+$("gdprName").addEventListener("input", () => fillGdpr());
+$("gdprAddr").addEventListener("input", () => fillGdpr());
+
+async function handle(files){
+  files = [...files]; if (!files.length) return;
+  cancelled = false; $("cancel").hidden = false;
+  try {
+    const an = await scanFiles(files);
+    const res = an.result();
+    setProgress(1, `Ferdig. ${an.messages.toLocaleString("nb-NO")} e-poster fra ${res.length} tjenester. Ingenting ble lastet opp.`);
+    setData(res, an.messages, false);
+  } catch (e) {
+    $("status").textContent = e.message === "avbrutt" ? "Avbrutt." : e.message;
+    $("status").classList.add("err");
+  } finally { $("cancel").hidden = true; }
+}
+$("file").addEventListener("change", e => { handle(e.target.files); e.target.value = ""; });
+$("cancel").onclick = () => { cancelled = true; };
+const dz = $("drop");
+["dragenter","dragover"].forEach(t => dz.addEventListener(t, e => { e.preventDefault(); dz.classList.add("over"); }));
+["dragleave","drop"].forEach(t => dz.addEventListener(t, e => { e.preventDefault(); dz.classList.remove("over"); }));
+dz.addEventListener("drop", e => handle(e.dataTransfer.files));
+// avoid the browser opening a file dropped next to the zone
+window.addEventListener("dragover", e => e.preventDefault());
+window.addEventListener("drop", e => e.preventDefault());
+
+/* ---------- sample data (made up, clearly labelled) ---------- */
+(function(){
+  const now = Date.UTC(2026, 9, 13), day = 864e5;
+  const S = [
+    ["Strømmetjeneste","no-reply@stream.example",["Velkommen til Strømmetjeneste","Nye serier denne uken"],1,38,920],
+    ["Nettbutikken","ordre@butikk.example",["Kvittering for ordre 1042","Black Week starter nå"],1,64,700],
+    ["Morgenavisa","nyhetsbrev@avisa.example",["Morgenbrief: dette skjer i dag","Kveldens saker"],1,212,600],
+    ["Treningsappen","hei@trening.example",["Bekreft e-postadressen din","Ukesrapporten din"],0,23,400],
+    ["Reiseportalen","deals@reise.example",["Billige fly til Roma i november","Siste sjanse: hotell i Bergen"],1,88,1100],
+    ["Gammelt forum","noreply@forum.example",["Tilbakestill passordet ditt"],-1,4,2100],
+    ["Konferanse AS","events@konferanse.example",["Invitasjon: Sky og sikkerhet 2026"],0,17,300],
+    ["Matkassen","post@matkasse.example",["Ordrebekreftelse: uke 41","Ny meny er klar"],1,51,260],
+    ["Elektronikkbutikk","info@elektro.example",["Ukens tilbud på lydplanker","Prisfall på hodetelefoner"],1,140,1500],
+    ["Kurs og læring","team@kurs.example",["Velkommen! Logg inn for å starte","Kurset ditt venter"],0,9,1800],
+    ["Bildeappen","noreply@bilde.example",["Engangskode: 481 922"],-1,6,980],
+    ["Kafé Kanelen","hei@kanelen.example",["Kanelsnurrdagen er tilbake"],1,12,150],
+  ];
+  const an = new Analyzer(); let seed = 7;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (const [n,a,subs,oc,count,span] of S) for (let i=0;i<count;i++) {
+    const dom = a.split("@")[1];
+    const h = { from:`${n} <${a}>`, subject:subs[i % subs.length], date:new Date(now - Math.floor(rnd()*span)*day).toUTCString() };
+    if (oc >= 0) h["list-unsubscribe"] = `<https://${dom}/unsubscribe>, <mailto:unsub@${dom}>`;
+    if (oc === 1) h["list-unsubscribe-post"] = "List-Unsubscribe=One-Click";
+    an.add(h);
+  }
+  setData(an.result(), an.messages, true);
+  decisions = { "avisa.example":"behold", "reise.example":"avmeld", "forum.example":"slett" };
+  renderAll();
+})();
+</script>
