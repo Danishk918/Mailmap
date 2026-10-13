@@ -1,38 +1,78 @@
 # mailmap
 
-**Finn ut hvor e-postadressen din er registrert – og rydd opp.**
-*Find every service your e-mail address is tied to, then unsubscribe or request deletion. Runs locally, reads headers only.*
+**Logg inn med Google eller Microsoft, se alt du er abonnert på, og meld deg av med ett trykk.**
+*Sign in with Google or Microsoft, see every newsletter you're subscribed to, and unsubscribe in one click. No server – everything runs in your browser.*
 
-![Rapport](docs/rapport.png)
+![Mailmap](docs/web.png)
 
-mailmap skanner innboksen din, grupperer avsendere per tjeneste og sorterer dem i
-**kontoer** (velkomst-, bekreftelses- og passord-e-poster), **nyhetsbrev** (har
-avmeldingslenke) og **annet**. Du får en rapport der du velger *behold* eller *meld av* for hver tjeneste.
+## Slik virker det
 
-## Hvorfor det er laget slik
+1. Brukeren logger inn med Google (Gmail) eller Microsoft (Outlook/Hotmail).
+2. Siden leser **kun headerne** (`From`, `Subject`, `Date`, `List-Unsubscribe`) i de nyeste e-postene.
+3. Avsendere grupperes per tjeneste. Alt med avmeldingslenke vises som abonnement.
+4. Brukeren trykker **Meld av** (én og én, eller flere samtidig). Avmeldingen skjer på siden:
+   - **Ett klikk (RFC 8058):** siden sender en `POST` til avsenderens avmeldingsadresse.
+   - **Via e-post:** siden sender avmeldings-e-posten fra brukerens egen konto.
+   - Noen få avsendere krever bekreftelse på egen side – da åpnes den i ny fane.
+5. Kontoer uten avmelding (velkomst- og passord-e-poster) vises separat, med ferdig GDPR-slettebrev.
+
+## Sikkerhet og personvern
 
 | Valg | Begrunnelse |
 |---|---|
-| Kjører lokalt, ingen server | E-posten din forlater aldri maskinen. Ingen tredjepart får tilgang. |
-| Leser kun headere | `From`, `Subject`, `Date`, `List-Unsubscribe` – aldri innholdet i e-postene. |
-| IMAP åpnes skrivebeskyttet | `SELECT … readonly` + `BODY.PEEK` – e-poster blir ikke markert som lest. |
-| Rapporten behandler alt som fiendtlig input | Hvem som helst kan sende deg e-post, så avsendernavn og emner kan inneholde HTML/JS. Data bygges inn som escaped JSON, vises kun via `textContent`, og en streng CSP blokkerer alt annet. Lenker godtas kun med `https:` / `mailto:`. |
-| Dekoder navn *etter* adresse-parsing | Hindrer at et kodet visningsnavn (`=?utf-8?q?…?=`) kan forfalske avsenderadressen. |
-| Ingen automatisk «sjekk om e-posten er registrert» på nettsider | Det er kontoenumerering, bryter vilkår og er juridisk tvilsomt. mailmap ser bare på e-post du allerede har mottatt. |
-| One-click etter RFC 8058, ellers manuell bekreftelse | Ekte ett-klikks avmelding sendes som POST. Vanlige lenker åpnes i nettleseren så du ser hva du bekrefter. Kun https, og redirect til http nektes. |
-| Ingen avhengigheter | Kun Python standardbibliotek (`msal` er valgfritt, bare for Outlook). |
+| Ingen server | OAuth skjer direkte mellom nettleseren og Google/Microsoft. Tokenet ligger kun i minnet og forsvinner når fanen lukkes. |
+| Minste nødvendige tilgang | Google: `gmail.metadata` (kan ikke lese innhold) + `gmail.send`. Microsoft: `Mail.Read` + `Mail.Send`. |
+| PKCE uten hemmelighet | Microsoft-innloggingen bruker Authorization Code + PKCE med `state`-sjekk. Koden fjernes fra adresselinjen med en gang. |
+| All e-post er fiendtlig input | Avsendernavn og emner vises kun via `textContent`. Lenker godtas kun med `https:` og `mailto:`. |
+| Header-injeksjon blokkert | `mailto:`-lenker valideres (én adresse) og linjeskift fjernes fra emnet, så en avsender ikke kan smugle inn `Bcc`. |
+| Forfalskning blokkert | Avsenderadressen tolkes før visningsnavnet dekodes, så et kodet navn (`=?utf-8?…?=`) ikke kan endre adressen. |
+| Streng CSP | Kun egne skript + Googles innloggingsskript. Ingen `eval`, ingen inline-skript. |
+| Ingen kontoenumerering | Verktøyet sjekker aldri nettsider for om e-posten er registrert. Det ser bare på e-post brukeren har mottatt. |
 
-## Nettsiden (ingen installasjon)
+## Sett opp innlogging (én gang, gratis)
 
-Åpne `web/index.html` i nettleseren, eller legg den ut gratis med GitHub Pages
-(Settings → Pages → mappe `/web`). Dra inn en `.mbox`- eller `.eml`-fil, så skjer
-resten i nettleseren: filen leses i biter på 4 MB (fungerer med eksporter på flere GB),
-bare headere tolkes, og ingenting sendes noe sted. Valgene dine huskes lokalt i nettleseren.
+Du som utvikler må registrere appen hos Google og Microsoft for å få lov til å lese e-post.
+Det tar ca. 15 minutter. Brukerne trenger ikke gjøre noe av dette.
 
-Nettsiden kan ikke bruke IMAP, så for direkte skanning av innboksen og automatisk
-ett-klikks avmelding brukes kommandolinjeversjonen under.
+**1. Publiser siden (GitHub Pages)**
+Legg repoet på GitHub → *Settings* → *Pages* → *Source:* **GitHub Actions**.
+Workflowen `pages.yml` publiserer `web/` til `https://<brukernavn>.github.io/mailmap/`.
 
-## Installer
+**2. Google (Gmail)**
+1. [console.cloud.google.com](https://console.cloud.google.com) → nytt prosjekt «mailmap».
+2. *APIs & Services* → *Library* → aktiver **Gmail API**.
+3. *Google Auth Platform* (OAuth consent screen) → *External* → fyll inn navn og e-post.
+4. *Data access* → legg til `gmail.metadata` og `gmail.send`.
+5. *Audience* → la stå på **Testing**, og legg til Gmail-adressene som skal teste.
+6. *Clients* → *Create client* → **Web application** → *Authorized JavaScript origins*:
+   `https://<brukernavn>.github.io` og `http://localhost:8000`.
+7. Kopier *Client ID* inn i `web/config.js` → `googleClientId`.
+
+**3. Microsoft (Outlook/Hotmail)**
+1. [portal.azure.com](https://portal.azure.com) → *App registrations* → *New registration*.
+2. *Supported account types:* **Accounts in any organizational directory and personal Microsoft accounts**.
+3. *Redirect URI:* plattform **Single-page application (SPA)** →
+   `https://<brukernavn>.github.io/mailmap/` (legg også til `http://localhost:8000/` under *Authentication*).
+4. *API permissions* → *Microsoft Graph* → *Delegated* → `Mail.Read`, `Mail.Send` (`User.Read` er der fra før).
+5. Kopier *Application (client) ID* inn i `web/config.js` → `microsoftClientId`.
+
+**Test lokalt:** `cd web && python3 -m http.server 8000` → åpne `http://localhost:8000/`.
+Uten oppsett fungerer **«Prøv uten å logge inn»** med eksempeldata.
+
+**Begrensninger å kjenne til**
+- Google: Mens appen står i *Testing*, kan bare inntil 100 testbrukere du har lagt til logge inn. Å åpne for alle krever
+  at Google verifiserer appen, og fordi `gmail.metadata` er et «restricted scope», også en betalt sikkerhetsvurdering (CASA).
+  Til CV og demo holder Testing.
+- Ved ett-klikks avmelding kan ikke nettleseren lese svaret fra avsenderen (CORS), så siden vet at forespørselen ble sendt,
+  ikke at avsenderen godtok den.
+- Bare de nyeste e-postene leses (`maxMessages`, standard 3000), for å holde seg innenfor Googles fartsgrenser.
+
+## Kommandolinjeversjonen
+
+I tillegg finnes en Python-versjon for terminalen. Den kan skanne via IMAP eller fra en eksportfil (`.mbox`),
+og lage en lokal HTML-rapport.
+
+### Installer
 
 ```bash
 git clone https://github.com/<ditt-brukernavn>/mailmap.git
@@ -40,14 +80,14 @@ cd mailmap
 python3 -m pip install -e .          # Python 3.10+
 ```
 
-## Prøv uten ekte innboks
+### Prøv uten ekte innboks
 
 ```bash
 python3 examples/make_demo.py demo.mbox
 mailmap scan --file demo.mbox --open
 ```
 
-## Bruk
+### Bruk
 
 **1. Fra eksport (tryggest, fungerer for alle)**
 Gmail: [Google Takeout](https://takeout.google.com) → kun «Mail» → du får en `.mbox`-fil.
@@ -80,7 +120,7 @@ mailmap scan --imap deg@hotmail.com --client-id <CLIENT_ID> --open
 
 Du får en kode du skriver inn på microsoft.com/devicelogin. Tokenet lagres i `~/.mailmap/` med filrettigheter `600`.
 
-### Rydde opp
+#### Rydde opp
 
 - **I rapporten:** «Meld av (ett klikk)», «Åpne avmelding», eller «Kopier GDPR-sletting» for kontoer uten lenke.
 - **I terminalen:**
@@ -95,6 +135,10 @@ mailmap gdpr --address deg@hotmail.com --name "Ditt Navn"
 ## Arkitektur
 
 ```
+web/
+├── index.html      siden (bygges fra app.html med scripts/build_web.py)
+├── app.js          innlogging, skanning, avmelding
+└── config.js       dine klient-ID-er
 mailmap/
 ├── sources.py      IMAP (passord / XOAUTH2) og .mbox/.eml → header-objekter
 ├── analyze.py      gruppering per domene, kategorisering, List-Unsubscribe-parsing
@@ -113,7 +157,7 @@ pytest -q
 Testene dekker blant annet XSS-forsøk i avsendernavn, forfalskning via kodede navn,
 ødelagte headere, at IMAP åpnes skrivebeskyttet (falsk IMAP-server) og ende-til-ende-skanning av en `.mbox`.
 
-## Begrensninger
+## Begrensninger (kommandolinje)
 
 - Finner bare tjenester som har sendt deg e-post (og som du ikke har slettet).
 - Kategoriseringen er heuristisk (nøkkelord i emnefelt).

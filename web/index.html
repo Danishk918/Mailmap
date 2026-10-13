@@ -1,450 +1,158 @@
 <!doctype html>
-<html lang="no"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Mailmap</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; connect-src https:; frame-src https://accounts.google.com/gsi/; img-src 'self' data:; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&display=swap">
 <style>
-/* Layout: one narrow column, three states – load, sort, do. Two choices per row.
-   Red = postbox red for "meld av", green for "behold". Nothing else is colored. */
+/* Layout: one narrow column. Sign in → reading → your subscriptions. One action per row.
+   Red = postbox red for leaving, green for done. Nothing else is colored. */
 :root{
   --bg:#f2f5f1; --surface:#ffffff; --sunk:#e6ece5; --line:#d5ddd3;
   --ink:#16251c; --mute:#5b6a60;
-  --keep:#1d6a42; --keep-soft:#dcefe3;
+  --ok:#1d6a42; --ok-soft:#dcefe3;
   --leave:#c21f2f; --leave-soft:#fbe3e5;
   --font:"Familjen Grotesk",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#121915; --surface:#1a231e; --sunk:#0e1411; --line:#2c3a31;
-  --ink:#e7efe9; --mute:#9aaba0;
-  --keep:#74cf9b; --keep-soft:#173325;
-  --leave:#ff8a93; --leave-soft:#3a1a1e; color-scheme:dark}}
+  --ink:#e7efe9; --mute:#9aaba0; --ok:#74cf9b; --ok-soft:#173325; --leave:#ff8a93; --leave-soft:#3a1a1e; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#121915; --surface:#1a231e; --sunk:#0e1411; --line:#2c3a31;
-  --ink:#e7efe9; --mute:#9aaba0;
-  --keep:#74cf9b; --keep-soft:#173325;
-  --leave:#ff8a93; --leave-soft:#3a1a1e; color-scheme:dark}
+  --ink:#e7efe9; --mute:#9aaba0; --ok:#74cf9b; --ok-soft:#173325; --leave:#ff8a93; --leave-soft:#3a1a1e; color-scheme:dark}
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--font)}
-.wrap{max-width:680px;margin:0 auto;padding-inline:16px;padding-block:48px 140px}
+.wrap{max-width:640px;margin:0 auto;padding-inline:16px;padding-block:48px 140px}
 button,input{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--ink);outline-offset:2px}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
-h1{font-size:clamp(36px,8vw,52px);line-height:1;letter-spacing:-.035em;font-weight:700;margin:0 0 14px;text-wrap:balance}
-.lede{color:var(--mute);margin:0 0 28px;max-width:52ch;font-size:17px}
+h1{font-size:clamp(34px,8vw,50px);line-height:1.02;letter-spacing:-.035em;font-weight:700;margin:0 0 14px;text-wrap:balance}
+h2{font-size:26px;line-height:1.15;letter-spacing:-.02em;margin:0;font-weight:700;text-wrap:balance}
+.lede{color:var(--mute);margin:0 0 28px;max-width:50ch;font-size:17px}
+.small{font-size:14px;color:var(--mute);margin:0}
 
-/* load */
-.drop{display:flex;flex-direction:column;align-items:flex-start;gap:14px;padding:26px;border-radius:18px;
-  background:var(--surface);border:2px dashed var(--line);transition:border-color .15s,background .15s}
-.drop.over{border-color:var(--keep);background:var(--keep-soft)}
-.drop p{margin:0;color:var(--mute);font-size:15px}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:12px 18px;
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;border:0;border-radius:12px;padding:13px 18px;
   font-weight:600;font-size:16px;cursor:pointer;text-decoration:none;color:var(--ink);background:var(--sunk);line-height:1.2}
+.btn:disabled{opacity:.5;cursor:default}
 .btn.main{background:var(--ink);color:var(--bg)}
-.btn.main:hover{opacity:.9}
-.btn.quiet{background:none;padding:8px 0;color:var(--mute);font-weight:500;text-decoration:underline;text-underline-offset:3px}
-.bar{width:100%;height:6px;border-radius:99px;background:var(--sunk);overflow:hidden}
-.bar i{display:block;height:100%;width:0;background:var(--keep);transition:width .2s}
-.status{font-size:14px;color:var(--mute)}
-.status.err{color:var(--leave)}
-details.help{font-size:15px;color:var(--mute)}
-details.help summary{cursor:pointer;color:var(--ink);font-weight:500}
-details.help ol{margin:8px 0 0;padding-left:20px;display:grid;gap:4px}
-.privacy{font-size:14px;color:var(--mute);margin:14px 0 0}
+.btn.line{background:var(--surface);border:1px solid var(--line)}
+.btn.red{background:var(--leave-soft);color:var(--leave)}
+.btn.quiet{background:none;padding:6px 0;color:var(--mute);font-weight:500;text-decoration:underline;text-underline-offset:3px}
+.btn svg{width:20px;height:20px;flex:none}
 
-/* sort */
-.result{margin-top:44px}
-.result h2{font-size:26px;line-height:1.15;letter-spacing:-.02em;margin:0 0 6px;font-weight:700;text-wrap:balance}
-.example{font-size:14px;color:var(--mute);margin:0 0 18px}
+/* sign in */
+.signin{display:grid;gap:10px;max-width:360px}
+.signin .btn{justify-content:flex-start;padding:14px 18px}
+.signin .btn.quiet{padding:6px 0;justify-self:start}
+.trust{margin-top:28px;display:grid;gap:8px;max-width:50ch}
+.trust p{margin:0;font-size:15px;color:var(--mute);padding-left:26px;position:relative}
+.trust p::before{content:"";position:absolute;left:0;top:.45em;width:14px;height:8px;border-left:2px solid var(--ok);border-bottom:2px solid var(--ok);transform:rotate(-45deg)}
+.err{color:var(--leave);font-size:15px;margin:12px 0 0}
+
+/* reading */
+.reading{display:grid;gap:12px}
+.bar{height:8px;border-radius:99px;background:var(--sunk);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--ok);transition:width .25s}
+
+/* subscriptions */
+.acct{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:28px;font-size:14px;color:var(--mute);flex-wrap:wrap}
+.acct b{color:var(--ink);font-weight:600;overflow-wrap:anywhere}
 .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 12px}
 .tabs button{border:1px solid var(--line);background:none;border-radius:99px;padding:6px 14px;font-size:14px;cursor:pointer;color:var(--mute)}
 .tabs button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 .list{list-style:none;margin:0;padding:0;background:var(--surface);border-radius:18px;border:1px solid var(--line)}
 .row{display:flex;align-items:center;gap:14px;padding:14px 16px;border-top:1px solid var(--line)}
 .row:first-child{border-top:0}
-.ava{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:700;font-size:17px;
-  background:var(--sunk);color:var(--mute)}
+.row input[type=checkbox]{flex:none;width:20px;height:20px;accent-color:var(--leave);margin:0}
+.ava{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:700;font-size:17px;background:var(--sunk);color:var(--mute)}
 .who{flex:1;min-width:0}
 .who b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .who span{display:block;font-size:14px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.toggle{flex:none;display:inline-flex;background:var(--sunk);border-radius:11px;padding:3px}
-.toggle button{border:0;background:none;border-radius:8px;padding:7px 12px;font-size:14px;font-weight:600;cursor:pointer;color:var(--mute)}
-.toggle button.k[aria-pressed="true"]{background:var(--keep-soft);color:var(--keep)}
-.toggle button.l[aria-pressed="true"]{background:var(--leave-soft);color:var(--leave)}
-.row.leave .who b{text-decoration:line-through;text-decoration-color:var(--leave)}
+.act{flex:none;display:flex;align-items:center;gap:8px}
+.act .btn{padding:8px 13px;font-size:14px;border-radius:10px}
+.state{font-size:14px;font-weight:600;color:var(--ok);display:inline-flex;align-items:center;gap:6px}
+.state.wait{color:var(--mute)}
+.state.bad{color:var(--leave)}
+.empty{padding:28px 16px;color:var(--mute);text-align:center}
 .showmore{margin:12px auto 0;display:flex}
 
-/* sticky decision bar */
-.dock{position:fixed;left:0;right:0;bottom:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));
-  background:var(--surface);border-top:1px solid var(--line)}
-.dock .in{max-width:680px;margin:0 auto;display:flex;align-items:center;gap:12px;justify-content:space-between}
+.dock{position:fixed;left:0;right:0;bottom:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));background:var(--surface);border-top:1px solid var(--line)}
+.dock .in{max-width:640px;margin:0 auto;display:flex;align-items:center;gap:12px;justify-content:space-between}
 .dock p{margin:0;font-weight:500}
-
-/* do */
-.todo{list-style:none;margin:18px 0 0;padding:0;display:grid;gap:10px}
-.todo li{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
-.todo li.done{opacity:.55}
-.todo .who{min-width:160px}
-.todo .go{display:flex;gap:8px;flex-wrap:wrap}
-.todo .btn{padding:9px 14px;font-size:15px}
-.todo .btn.red{background:var(--leave);color:var(--surface)}
-.check{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--mute);cursor:pointer}
-.check input{width:18px;height:18px;accent-color:var(--keep)}
-.hint{font-size:14px;color:var(--mute);margin:10px 0 0}
+.dock .btn{background:var(--leave);color:var(--surface)}
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);
-  padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s}
+  padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:calc(100% - 32px)}
 .toast.on{opacity:1}
+.demo{background:var(--ok-soft);color:var(--ink);border-radius:12px;padding:10px 14px;font-size:14px;margin:0 0 22px}
 
 @media (max-width:480px){
   .wrap{padding-block:32px 140px}
   .row{flex-wrap:wrap}
-  .toggle{margin-left:54px}
+  .act{width:100%;padding-left:94px}
 }
 </style>
-
+</head>
+<body>
 <div class="wrap">
-  <section id="load">
-    <h1>Hvem har e&#8209;postadressen din?</h1>
-    <p class="lede">Last inn en kopi av innboksen din. Du får en liste over alle tjenester som sender deg e-post, og velger hvem du vil beholde.</p>
-
-    <div class="drop" id="drop">
-      <label class="btn main" for="file">Velg e-posteksport</label>
-      <input id="file" type="file" accept=".mbox,.mbx,.eml" multiple hidden>
-      <p id="dropHint">eller dra filen hit (.mbox eller .eml)</p>
-      <div class="bar" id="barWrap" hidden><i id="bar"></i></div>
-      <div class="status" id="status" role="status" hidden></div>
-      <details class="help">
-        <summary>Hvordan får jeg en eksport?</summary>
-        <ol>
-          <li>Gå til takeout.google.com og logg inn.</li>
-          <li>Trykk «Fjern alle», og huk av bare for «E-post».</li>
-          <li>Last ned zip-filen du får på e-post, og pakk den ut.</li>
-          <li>Velg filen som slutter på .mbox.</li>
-        </ol>
-      </details>
+  <!-- 1. sign in -->
+  <section id="vStart">
+    <h1>Rydd opp i nyhetsbrevene dine</h1>
+    <p class="lede">Logg inn med e&#8209;postkontoen din. Mailmap finner alt du er abonnert på, og du melder deg av med ett trykk.</p>
+    <div class="signin">
+      <button class="btn line" id="gBtn">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.7 6c4.5-4.2 6.9-10.3 6.9-17.7z"/><path fill="#FBBC05" d="M10.6 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.7-6c-2.2 1.5-5 2.3-8.2 2.3-6.2 0-11.5-4.1-13.4-9.8l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg>
+        Logg inn med Google
+      </button>
+      <button class="btn line" id="mBtn">
+        <svg viewBox="0 0 23 23" aria-hidden="true"><path fill="#f35325" d="M1 1h10v10H1z"/><path fill="#81bc06" d="M12 1h10v10H12z"/><path fill="#05a6f0" d="M1 12h10v10H1z"/><path fill="#ffba08" d="M12 12h10v10H12z"/></svg>
+        Logg inn med Microsoft
+      </button>
+      <button class="btn quiet" id="demoBtn">Prøv uten å logge inn</button>
     </div>
-    <p class="privacy">Filen leses bare her i nettleseren. Ingenting lastes opp, og bare avsender og emne leses.</p>
+    <p class="err" id="startErr" role="alert" hidden></p>
+    <div class="trust">
+      <p>Siden leser bare avsender, emne og dato. Aldri innholdet i e&#8209;postene.</p>
+      <p>Det finnes ingen server. Alt skjer i nettleseren din, og ingenting lagres.</p>
+      <p>Du kan trekke tilbake tilgangen når som helst i Google- eller Microsoft-kontoen din.</p>
+    </div>
   </section>
 
-  <section class="result" id="sort">
+  <!-- 2. reading -->
+  <section id="vRead" class="reading" hidden>
+    <h2>Leser innboksen</h2>
+    <div class="bar"><i id="bar"></i></div>
+    <p class="small" id="readText" role="status">Kobler til …</p>
+  </section>
+
+  <!-- 3. subscriptions -->
+  <section id="vList" hidden>
+    <div class="acct"><span>Logget inn som <b id="who"></b></span><button class="btn quiet" id="out">Logg ut</button></div>
+    <p class="demo" id="demoNote" hidden>Dette er eksempeldata. Ingenting blir sendt når du trykker.</p>
     <h2 id="headline"></h2>
-    <p class="example" id="example">Dette er et eksempel med oppdiktede tjenester. Velg din egen fil over for å se dine.</p>
     <div class="tabs" id="tabs" role="group" aria-label="Vis">
-      <button data-c="" aria-pressed="true"></button>
-      <button data-c="konto" aria-pressed="false"></button>
-      <button data-c="nyhetsbrev" aria-pressed="false"></button>
+      <button data-v="sub" aria-pressed="true"></button>
+      <button data-v="done" aria-pressed="false"></button>
+      <button data-v="acc" aria-pressed="false"></button>
     </div>
     <ul class="list" id="list"></ul>
     <button class="btn quiet showmore" id="more" hidden></button>
   </section>
-
-  <section class="result" id="do" hidden>
-    <button class="btn quiet" id="back">Tilbake til listen</button>
-    <h2 id="doTitle"></h2>
-    <p class="hint">Hver knapp åpner tjenestens egen avmeldingsside i en ny fane. For kontoer uten lenke kopierer du et ferdig slettebrev og sender det til tjenesten.</p>
-    <ul class="todo" id="todo"></ul>
-  </section>
 </div>
 
 <div class="dock" id="dock" hidden>
-  <div class="in">
-    <p id="dockText"></p>
-    <button class="btn main" id="next">Meld meg av</button>
-  </div>
+  <div class="in"><p id="dockText"></p><button class="btn" id="bulk">Meld av</button></div>
 </div>
 <div class="toast" id="toast" role="status"></div>
 
-<script>
-"use strict";
-/* ---------- parsing (same rules as the Python version) ---------- */
-const ACCOUNT_RE = /\b(welcome|velkommen|verify|verification|bekreft|confirm|activate|aktiver|password|passord|reset|tilbakestill|sign[- ]?in|log ?in|logg inn|innlogging|account|konto|receipt|kvittering|order|ordre|bestilling|security code|sikkerhetskode|engangskode)/i;
-const MULTI = new Set(["co.uk","org.uk","ac.uk","gov.uk","com.au","net.au","co.nz","co.jp","com.br","co.za","com.tr","co.in","com.mx","com.cn"]);
-const WANT = new Set(["from","subject","date","list-unsubscribe","list-unsubscribe-post","delivered-to"]);
-
-function baseDomain(d){
-  const p = d.toLowerCase().trim().replace(/^\.+|\.+$/g,"").split(".").filter(Boolean);
-  if (p.length <= 2) return p.join(".");
-  return MULTI.has(p.slice(-2).join(".")) ? p.slice(-3).join(".") : p.slice(-2).join(".");
-}
-function decodeWords(s){
-  if (!s || s.indexOf("=?") < 0) return s || "";
-  return s.replace(/=\?([^?\s]+)\?([bBqQ])\?([^?]*)\?=(?:\s+(?==\?))?/g, (m, cs, enc, txt) => {
-    try {
-      let bytes;
-      if (enc === "b" || enc === "B") bytes = Uint8Array.from(atob(txt), c => c.charCodeAt(0));
-      else {
-        const t = txt.replace(/_/g," "), out = [];
-        for (let i = 0; i < t.length; i++) {
-          if (t[i] === "=" && /^[0-9a-f]{2}$/i.test(t.substr(i+1,2))) { out.push(parseInt(t.substr(i+1,2),16)); i += 2; }
-          else out.push(t.charCodeAt(i) & 255);
-        }
-        bytes = Uint8Array.from(out);
-      }
-      return new TextDecoder(cs.split("*")[0].toLowerCase()).decode(bytes);
-    } catch { return m; }
-  });
-}
-// Parse the raw address first and decode only the name, so an encoded name can't fake the address.
-function parseFrom(raw){
-  raw = (raw || "").trim();
-  let addr = "", name = "";
-  const a = raw.match(/<\s*([^<>\s]+@[^<>\s]+)\s*>\s*$/);
-  if (a) { addr = a[1]; name = raw.slice(0, a.index).trim().replace(/^"|"$/g,""); }
-  else { const b = raw.match(/([^\s<>"(),;:]+@[^\s<>"(),;:]+)/); if (b) addr = b[1]; }
-  return { addr: addr.toLowerCase(), name: decodeWords(name).trim() };
-}
-function unsubLinks(v){
-  const l = [...(v || "").matchAll(/<\s*([^>]+?)\s*>/g)].map(m => m[1]);
-  return { https: l.filter(x => /^https:\/\//i.test(x)), mailto: l.filter(x => /^mailto:/i.test(x)) };
-}
-
-class Analyzer {
-  constructor(){ this.s = new Map(); this.messages = 0; this.delivered = new Map(); }
-  add(h){
-    this.messages++;
-    if (h["delivered-to"]) { const d = parseFrom(h["delivered-to"]).addr; if (d) this.delivered.set(d, (this.delivered.get(d)||0)+1); }
-    const { addr, name } = parseFrom(h.from);
-    if (!addr.includes("@")) return;
-    const domain = baseDomain(addr.split("@").pop()); if (!domain) return;
-    let s = this.s.get(domain);
-    if (!s) this.s.set(domain, s = { domain, addrs:new Set(), names:new Map(), count:0, last:null, https:null, mailto:null, acc:0, news:0 });
-    s.count++; s.addrs.add(addr);
-    if (name && !name.includes("@")) s.names.set(name, (s.names.get(name)||0)+1);
-    if (ACCOUNT_RE.test(decodeWords(h.subject || ""))) s.acc++;
-    const t = Date.parse(h.date || ""), when = isNaN(t) ? null : t;
-    const newest = when == null || s.last == null || when >= s.last;
-    if (when != null) s.last = s.last == null ? when : Math.max(s.last, when);
-    const u = unsubLinks(h["list-unsubscribe"]);
-    if (u.https.length || u.mailto.length) {
-      s.news++;
-      if (newest) { if (u.https.length) s.https = u.https[0]; if (u.mailto.length) s.mailto = u.mailto[0]; }
-    }
-  }
-  result(){
-    const own = new Set([...this.delivered].filter(([,n]) => n > Math.max(2, this.messages * .05)).map(([a]) => a));
-    const out = [];
-    for (const s of this.s.values()) {
-      if (![...s.addrs].some(a => !own.has(a))) continue;   // skip the user's own sent mail
-      const name = [...s.names].sort((a,b) => b[1]-a[1])[0]?.[0] || s.domain;
-      out.push({ domain:s.domain, name, count:s.count, last:s.last, https:s.https, mailto:s.mailto,
-        cat: s.acc ? "konto" : s.news ? "nyhetsbrev" : "annet" });
-    }
-    return out.sort((a,b) => b.count - a.count);
-  }
-}
-
-const CHUNK = 4 * 1024 * 1024;
-async function scan(files){
-  const an = new Analyzer(), total = files.reduce((n,f) => n + f.size, 0) || 1;
-  let done = 0;
-  for (const f of files) {
-    if (/\.zip$/i.test(f.name)) throw new Error(`${f.name} er en zip-fil. Pakk den ut og velg .mbox-filen inni.`);
-    const mbox = !/\.eml$/i.test(f.name);
-    let h = mbox ? null : {}, cur = null, inHead = !mbox, prevBlank = true, seen = false, found = !mbox;
-    const flush = () => { if (cur && WANT.has(cur.k) && !(cur.k in h)) h[cur.k] = cur.v.slice(0, 4000); cur = null; };
-    const end = () => { if (h) { flush(); if (h.from) an.add(h); } h = null; inHead = false; };
-    const line = l => {
-      if (mbox && prevBlank && l.startsWith("From ")) { end(); h = {}; inHead = true; seen = false; found = true; prevBlank = false; return; }
-      prevBlank = l === "";
-      if (!inHead) return;
-      if (l === "") { if (seen) end(); return; }
-      if ((l[0] === " " || l[0] === "\t") && cur) { if (cur.v.length < 4000) cur.v += " " + l.trim(); return; }
-      const i = l.indexOf(":");
-      if (i > 0) { flush(); cur = { k:l.slice(0,i).trim().toLowerCase(), v:l.slice(i+1).trim() }; seen = true; }
-    };
-    const dec = new TextDecoder("utf-8"); let carry = "";
-    for (let off = 0; off < f.size; off += CHUNK) {
-      const buf = await f.slice(off, off + CHUNK).arrayBuffer();
-      const parts = (carry + dec.decode(buf, { stream: off + CHUNK < f.size })).split("\n");
-      carry = parts.pop();
-      for (const p of parts) line(p.endsWith("\r") ? p.slice(0,-1) : p);
-      progress((done + Math.min(off + CHUNK, f.size)) / total, `Leser … ${an.messages.toLocaleString("nb-NO")} e-poster så langt`);
-      await new Promise(r => setTimeout(r, 0));
-    }
-    if (carry) line(carry);
-    end();
-    if (!found) throw new Error(`Fant ingen e-poster i ${f.name}. Velg en .mbox- eller .eml-fil.`);
-    done += f.size;
-  }
-  return an;
-}
-
-/* ---------- UI ---------- */
-const $ = id => document.getElementById(id);
-const el = (t, c, txt) => { const e = document.createElement(t); if (c) e.className = c; if (txt != null) e.textContent = txt; return e; };
-const month = new Intl.DateTimeFormat("nb-NO", { month:"long", year:"numeric" });
-const safeHttps = u => { try { return new URL(u).protocol === "https:" ? u : null; } catch { return null; } };
-const n = x => x.toLocaleString("nb-NO");
-
-let data = [], isExample = true, choice = {}, filter = "", shown = 40, doneSet = new Set();
-const KEY = "mailmap-v2";
-const save = () => { if (!isExample) try { localStorage.setItem(KEY, JSON.stringify(choice)); } catch {} };
-const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || "{}"); } catch { return {}; } };
-
-function progress(p, msg){
-  $("barWrap").hidden = false; $("bar").style.width = (p*100).toFixed(1) + "%";
-  const s = $("status"); s.hidden = false; s.classList.remove("err"); s.textContent = msg;
-}
-function toast(msg){ const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("on"), 2200); }
-
-function setData(list, example){
-  data = list; isExample = example; choice = example ? {} : load(); shown = 40; doneSet = new Set();
-  $("example").hidden = !example;
-  showSort();
-}
-
-function render(){
-  const acc = data.filter(s => s.cat === "konto").length, news = data.filter(s => s.cat === "nyhetsbrev").length;
-  $("headline").textContent = `Du får e-post fra ${n(data.length)} tjenester. ${acc} av dem har du en konto hos.`;
-  const [all, a, b] = $("tabs").children;
-  all.textContent = `Alle ${data.length}`; a.textContent = `Kontoer ${acc}`; b.textContent = `Nyhetsbrev ${news}`;
-
-  const list = $("list"); list.replaceChildren();
-  const rows = data.filter(s => !filter || s.cat === filter);
-  rows.slice(0, shown).forEach(s => list.append(row(s)));
-  const rest = rows.length - shown;
-  $("more").hidden = rest <= 0; $("more").textContent = `Vis ${Math.min(40, rest)} til`;
-  if (!rows.length) list.append(el("li","row","Ingen tjenester her."));
-
-  const leaving = data.filter(s => choice[s.domain] === "l").length;
-  $("dock").hidden = !leaving || !$("do").hidden;
-  $("dockText").textContent = `${leaving} ${leaving === 1 ? "tjeneste" : "tjenester"} valgt`;
-}
-
-function row(s){
-  const c = choice[s.domain];
-  const li = el("li", "row" + (c === "l" ? " leave" : ""));
-  li.append(el("div","ava", s.name.trim()[0]?.toUpperCase() || "?"));
-  const who = el("div","who");
-  const what = s.cat === "konto" ? "Konto" : s.cat === "nyhetsbrev" ? "Nyhetsbrev" : "E-post";
-  who.append(el("b","", s.name), el("span","", `${what}, ${n(s.count)} e-poster${s.last ? ", sist i " + month.format(s.last) : ""}`));
-  const t = el("div","toggle"); t.setAttribute("role","group"); t.setAttribute("aria-label", "Valg for " + s.name);
-  const k = el("button","k","Behold"), l = el("button","l","Meld av");
-  k.setAttribute("aria-pressed", c === "k"); l.setAttribute("aria-pressed", c === "l");
-  k.onclick = () => pick(s.domain, "k"); l.onclick = () => pick(s.domain, "l");
-  t.append(k, l);
-  li.append(who, t);
-  return li;
-}
-
-function pick(domain, v){
-  if (choice[domain] === v) delete choice[domain]; else choice[domain] = v;
-  save(); render();
-}
-
-function showSort(){ $("sort").hidden = false; $("do").hidden = true; render(); }
-
-function showDo(){
-  const items = data.filter(s => choice[s.domain] === "l");
-  $("sort").hidden = true; $("do").hidden = false; $("dock").hidden = true;
-  const ul = $("todo"); ul.replaceChildren();
-  const update = () => { $("doTitle").textContent = `${doneSet.size} av ${items.length} gjort`; };
-  items.forEach(s => {
-    const li = el("li", doneSet.has(s.domain) ? "done" : "");
-    const who = el("div","who"); who.append(el("b","", s.name), el("span","", s.domain));
-    const go = el("div","go");
-    const https = safeHttps(s.https);
-    const markDone = () => { doneSet.add(s.domain); li.classList.add("done"); cb.checked = true; update(); };
-    if (https) {
-      const a = el("a","btn red","Åpne avmelding"); a.href = https; a.target = "_blank"; a.rel = "noopener noreferrer";
-      a.onclick = markDone; go.append(a);
-    } else if (s.mailto) {
-      const addr = s.mailto.replace(/^mailto:/i,"").split("?")[0];
-      const b = el("button","btn red","Kopier adresse");
-      b.onclick = () => copy(addr, `Send en tom e-post til ${addr} med emnet «unsubscribe».`, markDone);
-      go.append(b);
-    }
-    if (s.cat === "konto" || (!https && !s.mailto)) {
-      const g = el("button","btn","Kopier slettebrev");
-      g.onclick = () => copy(letter(s), "Slettebrev kopiert. Send det til tjenestens kundeservice.", markDone);
-      go.append(g);
-    }
-    const lab = el("label","check"), cb = el("input"); cb.type = "checkbox"; cb.checked = doneSet.has(s.domain);
-    cb.onchange = () => { cb.checked ? doneSet.add(s.domain) : doneSet.delete(s.domain); li.classList.toggle("done", cb.checked); update(); };
-    lab.append(cb, document.createTextNode("Gjort"));
-    li.append(who, go, lab); ul.append(li);
-  });
-  update();
-  window.scrollTo({ top: $("do").offsetTop - 20, behavior: "smooth" });
-}
-
-async function copy(text, msg, after){
-  try { await navigator.clipboard.writeText(text); toast(msg); after && after(); }
-  catch { toast("Kopiering ble blokkert. Prøv igjen, eller skriv det inn selv."); }
-}
-function letter(s){
-  return `Hei ${s.name},
-
-Jeg ber om at dere sletter kontoen min og alle personopplysninger dere har om meg, jf. personvernforordningen (GDPR) artikkel 17.
-
-Bekreft når det er gjort. Etter artikkel 12 skal dere svare innen én måned.
-
-Vennlig hilsen
-`;
-}
-
-/* ---------- events ---------- */
-$("tabs").onclick = e => {
-  const b = e.target.closest("button"); if (!b) return;
-  filter = b.dataset.c; shown = 40;
-  [...$("tabs").children].forEach(x => x.setAttribute("aria-pressed", x === b));
-  render();
-};
-$("more").onclick = () => { shown += 40; render(); };
-$("next").onclick = showDo;
-$("back").onclick = () => { showSort(); window.scrollTo({ top: $("sort").offsetTop - 20, behavior: "smooth" }); };
-
-async function handle(files){
-  files = [...files]; if (!files.length) return;
-  try {
-    const an = await scan(files), res = an.result();
-    progress(1, `Ferdig. ${n(an.messages)} e-poster lest.`);
-    setData(res, false);
-    window.scrollTo({ top: $("sort").offsetTop - 20, behavior: "smooth" });
-  } catch (e) {
-    const s = $("status"); s.hidden = false; s.textContent = e.message; s.classList.add("err");
-  }
-}
-$("file").onchange = e => { handle(e.target.files); e.target.value = ""; };
-const dz = $("drop");
-["dragenter","dragover"].forEach(t => dz.addEventListener(t, e => { e.preventDefault(); dz.classList.add("over"); }));
-["dragleave","drop"].forEach(t => dz.addEventListener(t, e => { e.preventDefault(); dz.classList.remove("over"); }));
-dz.addEventListener("drop", e => handle(e.dataTransfer.files));
-window.addEventListener("dragover", e => e.preventDefault());
-window.addEventListener("drop", e => e.preventDefault());
-
-/* ---------- example data (made up, labelled on the page) ---------- */
-(function(){
-  const now = Date.UTC(2026, 9, 13), day = 864e5; let seed = 7;
-  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  const S = [
-    ["Morgenavisa","nyhetsbrev@avisa.example","Morgenbrief",1,212],
-    ["Elektronikkbutikken","info@elektro.example","Ukens tilbud",1,140],
-    ["Reiseportalen","deals@reise.example","Billige fly til Roma",1,88],
-    ["Nettbutikken","ordre@butikk.example","Kvittering for ordre 1042",1,64],
-    ["Matkassen","post@matkasse.example","Ordrebekreftelse uke 41",1,51],
-    ["Strømmetjenesten","no-reply@stream.example","Velkommen til Strømmetjenesten",1,38],
-    ["Treningsappen","hei@trening.example","Bekreft e-postadressen din",1,23],
-    ["Konferanse AS","events@konferanse.example","Invitasjon til frokostmøte",1,17],
-    ["Kafé Kanelen","hei@kanelen.example","Kanelsnurrdagen er tilbake",1,12],
-    ["Kursplattformen","team@kurs.example","Logg inn for å starte kurset",1,9],
-    ["Bildeappen","noreply@bilde.example","Engangskode for innlogging",0,6],
-    ["Gammelt forum","noreply@forum.example","Tilbakestill passordet ditt",0,4],
-  ];
-  const an = new Analyzer();
-  for (const [name, a, subj, unsub, count] of S) for (let i = 0; i < count; i++) {
-    const dom = a.split("@")[1];
-    const h = { from:`${name} <${a}>`, subject:subj, date:new Date(now - Math.floor(rnd()*900)*day).toUTCString() };
-    if (unsub) h["list-unsubscribe"] = `<https://${dom}/unsubscribe>`;
-    an.add(h);
-  }
-  setData(an.result(), true);
-  choice = { "avisa.example":"k", "reise.example":"l", "elektro.example":"l" };
-  render();
-})();
-</script>
-
-</body></html>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
