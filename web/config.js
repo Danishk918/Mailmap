@@ -2,6 +2,6 @@
 // Client IDs are public by design; there is no secret in this file.
 window.MAILMAP_CONFIG = {
   googleClientId: "",      // e.g. "1234-abc.apps.googleusercontent.com"
-  microsoftClientId: "",   // e.g. "00000000-0000-0000-0000-000000000000"
+  microsoftClientId: "a4573f6d-f815-47b2-a77f-13ea1be0545e",
   maxMessages: 3000        // newest messages to read per scan
 };
