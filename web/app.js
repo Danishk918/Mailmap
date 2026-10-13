@@ -280,7 +280,7 @@ const n = x => x.toLocaleString("nb-NO");
 const safeHttps = u => { try { return new URL(u).protocol === "https:" ? u : null; } catch { return null; } };
 
 const session = { provider: null, token: null, email: "" };
-let items = [], state = {}, picked = new Set(), view = "sub", shown = 50;
+let items = [], state = {}, picked = new Set(), view = "sub", shown = 50, query = "";
 const fresh = new Set();   // rows that should play the postmark animation once
 const stay = new Set();    // stamped rows kept in the "Abonnert" list until the tab changes
 const storeKey = () => "mailmap-done:" + session.email;
@@ -305,7 +305,7 @@ async function start(provider, token){
       $("readText").textContent = done ? `${n(done)} av ${n(total)} e-poster lest` : `Fant ${n(total)} e-poster …`;
     });
     items = an.result();
-    state = loadDone(); picked = new Set(); view = "sub"; shown = 50;
+    state = loadDone(); picked = new Set(); view = "sub"; shown = 50; query = ""; $("q").value = "";
     $("who").textContent = session.email;
     $("demoNote").hidden = provider !== Demo;
     show("vList"); render();
@@ -325,9 +325,20 @@ function render(){
   a.textContent = `Abonnert ${subs.length}`; b.textContent = `Avmeldt ${done.length}`; c.textContent = `Kontoer ${acc.length}`;
   [...$("tabs").children].forEach(x => x.setAttribute("aria-pressed", x.dataset.v === view));
 
-  const rows = view === "sub" ? items.filter(s => s.kind === "sub" && (state[s.id] !== "done" || stay.has(s.id))) : view === "done" ? done : acc;
+  const all = view === "sub" ? items.filter(s => s.kind === "sub" && (state[s.id] !== "done" || stay.has(s.id))) : view === "done" ? done : acc;
+  const q = query.trim().toLowerCase();
+  const rows = q ? all.filter(s => (s.name + " " + s.domain).toLowerCase().includes(q)) : all;
   const list = $("list"); list.replaceChildren();
-  if (!rows.length) list.append(el("li","empty", view === "sub" ? "Ingen abonnementer igjen." : view === "done" ? "Du har ikke meldt deg av noe ennå." : "Ingen kontoer funnet."));
+  if (!rows.length) list.append(el("li","empty", q ? `Ingen avsendere passer «${query.trim()}».`
+    : view === "sub" ? "Ingen abonnementer igjen." : view === "done" ? "Du har ikke meldt deg av noe ennå." : "Ingen kontoer funnet."));
+
+  // "Velg alle" selects every matching row in the list, also those not shown yet.
+  const selectable = view === "sub" ? rows.filter(s => state[s.id] !== "done" && state[s.id] !== "busy") : [];
+  const chosen = selectable.filter(s => picked.has(s.id)).length;
+  $("allWrap").hidden = !selectable.length;
+  $("all").checked = selectable.length > 0 && chosen === selectable.length;
+  $("all").indeterminate = chosen > 0 && chosen < selectable.length;
+  $("allText").textContent = q ? `Velg alle treff (${selectable.length})` : `Velg alle (${selectable.length})`;
   rows.slice(0, shown).forEach(s => list.append(view === "acc" ? accRow(s) : subRow(s)));
   const rest = rows.length - shown;
   $("more").hidden = rest <= 0; $("more").textContent = `Vis ${Math.min(50, rest)} til`;
@@ -338,7 +349,7 @@ function render(){
   $("bulk").textContent = `Meld av ${sel.length}`;
 }
 
-function meta(s){ return `${n(s.count)} e-poster${s.last ? ", sist " + nb.format(s.last) : ""}`; }
+function meta(s){ return `${n(s.count)} ${s.count === 1 ? "e-post" : "e-poster"}${s.last ? ", sist " + nb.format(s.last) : ""}`; }
 
 function subRow(s){
   const li = el("li","row"), st = state[s.id];
@@ -408,6 +419,14 @@ $("mBtn").onclick = () => Microsoft.signIn();
 $("demoBtn").onclick = () => start(Demo, "demo");
 $("tabs").onclick = e => { const b = e.target.closest("button"); if (!b) return; view = b.dataset.v; shown = 50; stay.clear(); render(); };
 $("more").onclick = () => { shown += 50; render(); };
+$("q").addEventListener("input", e => { query = e.target.value; shown = 50; render(); });
+$("all").onchange = e => {
+  const q = query.trim().toLowerCase();
+  items.filter(s => s.kind === "sub" && state[s.id] !== "done" && state[s.id] !== "busy" &&
+    (!q || (s.name + " " + s.domain).toLowerCase().includes(q)))
+    .forEach(s => e.target.checked ? picked.add(s.id) : picked.delete(s.id));
+  render();
+};
 $("bulk").onclick = () => run(items.filter(s => picked.has(s.id) && state[s.id] !== "done" && state[s.id] !== "busy"));
 $("out").onclick = () => {
   session.provider?.revoke(session.token);

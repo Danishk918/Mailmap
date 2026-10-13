@@ -81,6 +81,14 @@ h2{font:800 clamp(32px,7vw,42px)/1 var(--display);margin:0;text-wrap:balance}
 .list{list-style:none;margin:0;padding:0;background:var(--card);border:2px solid var(--ink);border-radius:10px;box-shadow:var(--shadow);overflow:hidden}
 .row{position:relative;display:flex;align-items:center;gap:14px;padding:14px 16px;border-top:2px solid var(--sunk)}
 .row:first-child{border-top:0}
+.tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 14px}
+.tools input[type=search]{flex:1 1 220px;min-width:0;min-height:46px;padding:10px 14px;border:2px solid var(--ink);border-radius:8px;background:var(--card);font-size:16px}
+.tools input[type=search]::placeholder{color:var(--mute)}
+.all{display:flex;align-items:center;gap:10px;font-weight:600;cursor:pointer;padding-left:18px;min-height:46px}
+.all input,.row input[type=checkbox]{flex:none;appearance:none;width:24px;height:24px;margin:0;border:2px solid var(--ink);border-radius:4px;background:var(--card);cursor:pointer;display:grid;place-items:center}
+.all input:checked,.all input:indeterminate{background:var(--red)}
+.all input:checked::after,.row input[type=checkbox]:checked::after{content:"";width:10px;height:6px;border-left:3px solid var(--on-red);border-bottom:3px solid var(--on-red);transform:translateY(-2px) rotate(-45deg)}
+.all input:indeterminate::after{content:"";width:12px;height:0;border-top:3px solid var(--on-red)}
 .cbspace{flex:none;width:24px}
 .row input[type=checkbox]{flex:none;appearance:none;width:24px;height:24px;margin:0;border:2px solid var(--ink);border-radius:4px;background:var(--card);cursor:pointer;display:grid;place-items:center}
 .row input[type=checkbox]:checked{background:var(--red)}
@@ -172,6 +180,10 @@ h2{font:800 clamp(32px,7vw,42px)/1 var(--display);margin:0;text-wrap:balance}
       <button data-v="sub" aria-pressed="true"></button>
       <button data-v="done" aria-pressed="false"></button>
       <button data-v="acc" aria-pressed="false"></button>
+    </div>
+    <div class="tools">
+      <label class="all" id="allWrap"><input type="checkbox" id="all"><span id="allText">Velg alle</span></label>
+      <input type="search" id="q" placeholder="Søk etter avsender" aria-label="Søk etter avsender" autocomplete="off">
     </div>
     <ul class="list" id="list"></ul>
     <button class="btn quiet showmore" id="more" hidden></button>
