@@ -122,6 +122,10 @@ h2{font:800 clamp(32px,7vw,42px)/1 var(--display);margin:0;text-wrap:balance}
 .who .flag,.who .note{white-space:normal;margin-top:4px;font-size:14px}
 .who .flag{color:var(--red);font-weight:600}
 .who .flag::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);margin-right:7px;vertical-align:1px}
+.who .manual{white-space:normal;margin-top:4px;font-size:14px;font-weight:600;color:var(--blue)}
+.who .manual::before{content:"";display:inline-block;width:12px;height:9px;margin-right:7px;vertical-align:0;border:2px solid var(--blue);border-radius:2px;
+  background:linear-gradient(to bottom right,transparent 46%,var(--blue) 46% 54%,transparent 54%) ,linear-gradient(to bottom left,transparent 46%,var(--blue) 46% 54%,transparent 54%);background-size:100% 120%;background-repeat:no-repeat}
+.manualnote{margin:8px 0 0;font-size:16px;color:var(--mute)}
 .who .note.quiet{color:var(--ok);font-weight:600}
 .det{flex-basis:100%;margin-left:98px;font-size:14px;color:var(--mute)}
 .det summary{cursor:pointer;width:max-content;font-weight:600;color:var(--mute);padding:4px 0}
@@ -191,6 +195,7 @@ h2{font:800 clamp(32px,7vw,42px)/1 var(--display);margin:0;text-wrap:balance}
     <div class="acct"><span>Logget inn som <b id="who"></b></span><button class="btn quiet" id="out">Logg ut</button></div>
     <p class="demo" id="demoNote" hidden>Dette er eksempeldata. Ingenting blir sendt når du trykker.</p>
     <h2 id="headline"></h2>
+    <p class="manualnote" id="manualNote" hidden></p>
     <div class="tabs" id="tabs" role="group" aria-label="Vis">
       <button data-v="sub" aria-pressed="true"></button>
       <button data-v="done" aria-pressed="false"></button>

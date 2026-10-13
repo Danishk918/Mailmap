@@ -276,7 +276,7 @@ async function unsubscribe(s){
   if (!sent.length) throw errors[0] || new Error("Ingen automatisk avmelding tilgjengelig.");
   return sent;
 }
-const VIA = { post: "ett klikk", mail: "e-post" };
+const VIA = { post: "ett klikk", mail: "e-post", page: "avsenderens nettside" };
 function describe(s){
   const ways = [];
   if (s.https && s.oneClick) ways.push("Ett klikk (RFC 8058) til " + host(s.https));
@@ -317,6 +317,15 @@ function verdict(s){
   return Date.now() < e.t + GRACE ? "wait" : "quiet";
 }
 const stillSending = s => state[s.id] === "done" && verdict(s) === "still";
+const isManual = s => !(s.oneClick || s.mailto);
+// Many senders' own unsubscribe pages ask for the e-mail address. Copy it during the click
+// (clipboard access is only allowed inside a user action) so the user can just paste it.
+function copyEmail(){
+  if (!session.email || session.provider === Demo) return toast("E-posten din blir kopiert her, så du kan lime den inn på siden.");
+  navigator.clipboard.writeText(session.email)
+    .then(() => toast(`${session.email} er kopiert. Spør siden etter e-post, lim den inn med Ctrl+V.`))
+    .catch(() => toast("Siden åpnet seg. Spør den etter e-post, skriv inn " + session.email + "."));
+}
 
 function show(v){ ["vStart","vRead","vList"].forEach(x => $(x).hidden = x !== v); $("dock").hidden = true; }
 function showErr(msg){ show("vStart"); const e = $("startErr"); e.textContent = msg; e.hidden = false; }
@@ -350,6 +359,11 @@ function render(){
   $("headline").textContent = subs.length
     ? `Du er abonnert på ${n(subs.length)} ${subs.length === 1 ? "nyhetsbrev" : "nyhetsbrev"}.`
     : "Du er ikke abonnert på noe lenger.";
+  const manualCount = subs.filter(s => isManual(s) || stillSending(s)).length;
+  $("manualNote").hidden = !manualCount || view !== "sub";
+  $("manualNote").textContent = manualCount === 1
+    ? "1 av dem må gjøres manuelt hos avsenderen. Den er merket i lista."
+    : `${manualCount} av dem må gjøres manuelt hos avsenderen. De er merket i lista.`;
   const [a, b, c] = $("tabs").children;
   a.textContent = `Abonnert ${subs.length}`; b.textContent = `Sendt ${done.length}`; c.textContent = `Kontoer ${acc.length}`;
   [...$("tabs").children].forEach(x => x.setAttribute("aria-pressed", x.dataset.v === view));
@@ -395,7 +409,8 @@ function subRow(s){
   li.append(el("div","ava", s.name.trim()[0]?.toUpperCase() || "?"));
   const who = el("div","who"); who.append(el("b","", s.name), el("span","", meta(s)));
   const e = sentLog[s.id], href = safeHttps(s.https);
-  if (still) who.append(el("span","flag", `Sender fortsatt, selv om du meldte deg av ${nb.format(e.t)}`));
+  if (still) who.append(el("span","flag", `Sender fortsatt, selv om du meldte deg av ${nb.format(e.t)}. Må gjøres manuelt.`));
+  else if (!isDone && isManual(s)) who.append(el("span","manual", "Må gjøres manuelt på avsenderens side"));
   else if (isDone && e) {
     const v = verdict(s), via = (e.via || []).map(x => VIA[x]).filter(Boolean).join(" og ");
     const when = e.t ? `Sendt ${nb.format(e.t)}${via ? " via " + via : ""}. ` : "";
@@ -405,7 +420,7 @@ function subRow(s){
   const pageLink = (label, cls) => {
     const a = el("a", "btn " + cls, label);
     if (href && session.provider !== Demo) { a.href = href; a.target = "_blank"; a.rel = "noopener noreferrer"; }
-    a.onclick = ev => { if (session.provider === Demo) ev.preventDefault(); };
+    a.onclick = ev => { if (session.provider === Demo) ev.preventDefault(); copyEmail(); };
     return a;
   };
   if (isDone) {
@@ -424,7 +439,7 @@ function subRow(s){
     a.title = "Denne avsenderen krever at du bekrefter på deres side";
     const old = a.onclick;
     a.onclick = ev => { old(ev); sentLog[s.id] = { t: Date.now(), via: ["page"] }; state[s.id] = "done"; saveDone(); picked.delete(s.id);
-      toast("Bekreft avmeldingen på siden som åpnet seg."); render(); };
+      render(); };
     act.append(a);
   }
 
