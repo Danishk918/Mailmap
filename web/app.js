@@ -55,18 +55,23 @@ class Analyzer {
     if (!addr.includes("@") || addr === this.own) return;
     const domain = baseDomain(addr.split("@").pop()); if (!domain) return;
     let s = this.s.get(domain);
-    if (!s) this.s.set(domain, s = { domain, names:new Map(), addr, count:0, last:null, https:null, mailto:null, oneClick:false, acc:0 });
+    if (!s) this.s.set(domain, s = { domain, names:new Map(), addr, count:0, last:null, https:null, mailto:null, oneClick:false, acc:0,
+      unsubAt:null, rawUnsub:"", rawPost:"" });
     s.count++;
     if (name && !name.includes("@")) s.names.set(name, (s.names.get(name)||0)+1);
     if (ACCOUNT_RE.test(decodeWords(h.subject || ""))) s.acc++;
     const t = Date.parse(h.date || ""), when = isNaN(t) ? null : t;
-    const newest = when == null || s.last == null || when >= s.last;
     if (when != null) s.last = s.last == null ? when : Math.max(s.last, when);
     const u = unsubLinks(h["list-unsubscribe"]);
-    if (newest && (u.https.length || u.mailto.length)) {   // tokens expire: keep the newest
+    // Tokens expire, so use the newest message that actually HAS an unsubscribe header
+    // (the newest message overall may be a receipt without one).
+    if ((u.https.length || u.mailto.length) && (s.unsubAt == null || (when != null && when >= s.unsubAt))) {
+      s.unsubAt = when ?? s.unsubAt ?? 0;
       s.https = u.https[0] || null;
       s.mailto = u.mailto[0] || null;
       s.oneClick = !!s.https && /list-unsubscribe=one-click/i.test(h["list-unsubscribe-post"] || "");
+      s.rawUnsub = (h["list-unsubscribe"] || "").slice(0, 2000);
+      s.rawPost = (h["list-unsubscribe-post"] || "").slice(0, 200);
     }
   }
   result(){
@@ -74,7 +79,7 @@ class Analyzer {
       id: s.domain,
       name: [...s.names].sort((a,b) => b[1]-a[1])[0]?.[0] || s.domain,
       domain: s.domain, count: s.count, last: s.last,
-      https: s.https, mailto: s.mailto, oneClick: s.oneClick,
+      https: s.https, mailto: s.mailto, oneClick: s.oneClick, rawUnsub: s.rawUnsub, rawPost: s.rawPost,
       kind: (s.https || s.mailto) ? "sub" : s.acc ? "acc" : "other",
     })).sort((a,b) => b.count - a.count);
   }
@@ -250,27 +255,36 @@ const Demo = {
 };
 
 /* ================================================================ unsubscribe */
-// Returns "done" when the page did it, "opened" when the sender's page had to be opened.
+// Sends the unsubscribe through every automatic channel the sender offers and returns the
+// channels that went out. Throws only if none did. The browser can't read the sender's reply
+// to the one-click POST (CORS), so a request that went out is "sent", not "confirmed".
 async function unsubscribe(s){
-  if (session.provider === Demo) { await sleep(350); return s.oneClick || s.mailto ? "done" : "opened"; }
+  if (session.provider === Demo) { await sleep(350); return [s.oneClick && "post", s.mailto && "mail"].filter(Boolean); }
+  const sent = [], errors = [];
   if (s.https && s.oneClick) {
-    // RFC 8058: a form POST to the sender's link. 'no-cors' means we can send it but not read the reply.
-    await fetch(s.https, { method: "POST", mode: "no-cors", credentials: "omit", referrerPolicy: "no-referrer",
-      body: new URLSearchParams({ "List-Unsubscribe": "One-Click" }) });
-    return "done";
+    try {
+      await fetch(s.https, { method: "POST", mode: "no-cors", credentials: "omit", referrerPolicy: "no-referrer",
+        body: new URLSearchParams({ "List-Unsubscribe": "One-Click" }) });
+      sent.push("post");
+    } catch (e) { errors.push(e); }
   }
   if (s.mailto) {
-    const m = parseMailto(s.mailto);
-    await session.provider.send(session.token, m.to, m.subject, m.body);
-    return "done";
+    // An unsubscribe e-mail is handled by the sender's own servers, which makes it the most robust channel.
+    try { const m = parseMailto(s.mailto); await session.provider.send(session.token, m.to, m.subject, m.body); sent.push("mail"); }
+    catch (e) { errors.push(e); }
   }
-  return "opened";
+  if (!sent.length) throw errors[0] || new Error("Ingen automatisk avmelding tilgjengelig.");
+  return sent;
 }
-function method(s){
-  if (s.https && s.oneClick) return "Meld av";
-  if (s.mailto) return "Meld av";
-  return "Åpne avmelding";
+const VIA = { post: "ett klikk", mail: "e-post" };
+function describe(s){
+  const ways = [];
+  if (s.https && s.oneClick) ways.push("Ett klikk (RFC 8058) til " + host(s.https));
+  if (s.mailto) ways.push("E-post til " + (s.mailto.replace(/^mailto:/i, "").split("?")[0]));
+  if (!ways.length && s.https) ways.push("Bare nettside – du må bekrefte hos " + host(s.https));
+  return ways.join(" + ") || "Ingen avmeldingslenke";
 }
+function host(u){ try { return new URL(u).hostname; } catch { return "?"; } }
 
 /* ================================================================ UI */
 const $ = id => document.getElementById(id);
@@ -283,11 +297,25 @@ const session = { provider: null, token: null, email: "" };
 let items = [], state = {}, picked = new Set(), view = "sub", shown = 50, query = "";
 const fresh = new Set();   // rows that should play the postmark animation once
 const stay = new Set();    // stamped rows kept in the "Abonnert" list until the tab changes
-const storeKey = () => "mailmap-done:" + session.email;
-const loadDone = () => { try { return JSON.parse(localStorage.getItem(storeKey()) || "{}"); } catch { return {}; } };
-const saveDone = () => { if (session.provider === Demo) return; try {
-  const keep = {}; for (const [k, v] of Object.entries(state)) if (v === "done") keep[k] = v;
-  localStorage.setItem(storeKey(), JSON.stringify(keep)); } catch {} };
+let sentLog = {};          // id -> { t: when unsubscribe was sent, via: ["post","mail"] | ["page"] }
+const GRACE = 2 * 864e5;  // senders get two days to process an unsubscribe
+const storeKey = () => "mailmap-sent:" + session.email;
+const loadDone = () => {
+  try {
+    sentLog = JSON.parse(localStorage.getItem(storeKey()) || "{}");
+    const old = JSON.parse(localStorage.getItem("mailmap-done:" + session.email) || "{}");   // earlier format
+    for (const k of Object.keys(old)) if (!sentLog[k]) sentLog[k] = { t: null, via: [] };
+  } catch { sentLog = {}; }
+  const st = {}; for (const k of Object.keys(sentLog)) st[k] = "done"; return st;
+};
+const saveDone = () => { if (session.provider === Demo) return; try { localStorage.setItem(storeKey(), JSON.stringify(sentLog)); } catch {} };
+// "still": new mail arrived after the grace period. "wait": too early to tell. "quiet": no new mail since.
+function verdict(s){
+  const e = sentLog[s.id]; if (!e || !e.t) return "unknown";
+  if (s.last && s.last > e.t + GRACE) return "still";
+  return Date.now() < e.t + GRACE ? "wait" : "quiet";
+}
+const stillSending = s => state[s.id] === "done" && verdict(s) === "still";
 
 function show(v){ ["vStart","vRead","vList"].forEach(x => $(x).hidden = x !== v); $("dock").hidden = true; }
 function showErr(msg){ show("vStart"); const e = $("startErr"); e.textContent = msg; e.hidden = false; }
@@ -305,7 +333,7 @@ async function start(provider, token){
       $("readText").textContent = done ? `${n(done)} av ${n(total)} e-poster lest` : `Fant ${n(total)} e-poster …`;
     });
     items = an.result();
-    state = loadDone(); picked = new Set(); view = "sub"; shown = 50; query = ""; $("q").value = "";
+    state = provider === Demo ? (sentLog = {}, {}) : loadDone(); picked = new Set(); view = "sub"; shown = 50; query = ""; $("q").value = "";
     $("who").textContent = session.email;
     $("demoNote").hidden = provider !== Demo;
     show("vList"); render();
@@ -315,25 +343,27 @@ async function start(provider, token){
 }
 
 function render(){
-  const subs = items.filter(s => s.kind === "sub" && state[s.id] !== "done");
-  const done = items.filter(s => state[s.id] === "done");
+  const subs = items.filter(s => s.kind === "sub" && (state[s.id] !== "done" || stillSending(s)));
+  const done = items.filter(s => state[s.id] === "done" && !stillSending(s));
   const acc = items.filter(s => s.kind === "acc");
   $("headline").textContent = subs.length
     ? `Du er abonnert på ${n(subs.length)} ${subs.length === 1 ? "nyhetsbrev" : "nyhetsbrev"}.`
     : "Du er ikke abonnert på noe lenger.";
   const [a, b, c] = $("tabs").children;
-  a.textContent = `Abonnert ${subs.length}`; b.textContent = `Avmeldt ${done.length}`; c.textContent = `Kontoer ${acc.length}`;
+  a.textContent = `Abonnert ${subs.length}`; b.textContent = `Sendt ${done.length}`; c.textContent = `Kontoer ${acc.length}`;
   [...$("tabs").children].forEach(x => x.setAttribute("aria-pressed", x.dataset.v === view));
 
-  const all = view === "sub" ? items.filter(s => s.kind === "sub" && (state[s.id] !== "done" || stay.has(s.id))) : view === "done" ? done : acc;
+  const all = view === "sub" ? items.filter(s => s.kind === "sub" && (state[s.id] !== "done" || stillSending(s) || stay.has(s.id))) : view === "done" ? done : acc;
+  // senders that ignored an unsubscribe go first – they need the user's attention
+  if (view === "sub") all.sort((x, y) => stillSending(y) - stillSending(x));
   const q = query.trim().toLowerCase();
   const rows = q ? all.filter(s => (s.name + " " + s.domain).toLowerCase().includes(q)) : all;
   const list = $("list"); list.replaceChildren();
   if (!rows.length) list.append(el("li","empty", q ? `Ingen avsendere passer «${query.trim()}».`
-    : view === "sub" ? "Ingen abonnementer igjen." : view === "done" ? "Du har ikke meldt deg av noe ennå." : "Ingen kontoer funnet."));
+    : view === "sub" ? "Ingen abonnementer igjen." : view === "done" ? "Du har ikke sendt noen avmeldinger ennå." : "Ingen kontoer funnet."));
 
   // "Velg alle" selects every matching row in the list, also those not shown yet.
-  const selectable = view === "sub" ? rows.filter(s => state[s.id] !== "done" && state[s.id] !== "busy") : [];
+  const selectable = view === "sub" ? rows.filter(s => (state[s.id] !== "done" || stillSending(s)) && state[s.id] !== "busy") : [];
   const chosen = selectable.filter(s => picked.has(s.id)).length;
   $("allWrap").hidden = !selectable.length;
   $("all").checked = selectable.length > 0 && chosen === selectable.length;
@@ -343,7 +373,7 @@ function render(){
   const rest = rows.length - shown;
   $("more").hidden = rest <= 0; $("more").textContent = `Vis ${Math.min(50, rest)} til`;
 
-  const sel = [...picked].filter(id => state[id] !== "done" && state[id] !== "busy");
+  const sel = [...picked].filter(id => state[id] !== "busy" && (state[id] !== "done" || stillSending(items.find(s => s.id === id) || {})));
   $("dock").hidden = view !== "sub" || !sel.length;
   $("dockText").textContent = `${sel.length} valgt`;
   $("bulk").textContent = `Meld av ${sel.length}`;
@@ -352,9 +382,10 @@ function render(){
 function meta(s){ return `${n(s.count)} ${s.count === 1 ? "e-post" : "e-poster"}${s.last ? ", sist " + nb.format(s.last) : ""}`; }
 
 function subRow(s){
-  const li = el("li","row"), st = state[s.id];
-  if (view === "sub" && st === "done") li.append(el("span", "cbspace"));
-  if (view === "sub" && st !== "done") {
+  const li = el("li","row"), st = state[s.id], still = stillSending(s);
+  const isDone = st === "done" && !still;
+  if (view === "sub" && isDone) li.append(el("span", "cbspace"));
+  if (view === "sub" && !isDone) {
     const cb = el("input"); cb.type = "checkbox"; cb.checked = picked.has(s.id); cb.setAttribute("aria-label", "Velg " + s.name);
     cb.disabled = st === "busy";
     cb.onchange = () => { cb.checked ? picked.add(s.id) : picked.delete(s.id); render(); };
@@ -362,24 +393,58 @@ function subRow(s){
   }
   li.append(el("div","ava", s.name.trim()[0]?.toUpperCase() || "?"));
   const who = el("div","who"); who.append(el("b","", s.name), el("span","", meta(s)));
+  const e = sentLog[s.id], href = safeHttps(s.https);
+  if (still) who.append(el("span","flag", `Sender fortsatt, selv om du meldte deg av ${nb.format(e.t)}`));
+  else if (isDone && e) {
+    const v = verdict(s), via = (e.via || []).map(x => VIA[x]).filter(Boolean).join(" og ");
+    const when = e.t ? `Sendt ${nb.format(e.t)}${via ? " via " + via : ""}. ` : "";
+    who.append(el("span", "note " + v, when + (v === "quiet" ? "Ingen nye e-poster siden." : v === "wait" ? "Avsenderen har to dager på seg." : "")));
+  }
   const act = el("div","act");
-  if (st === "done") { act.append(el("span", fresh.has(s.id) ? "state" : "state still", "Avmeldt")); fresh.delete(s.id); }
-  else if (st === "busy") act.append(el("span","state wait","Melder av …"));
+  const pageLink = (label, cls) => {
+    const a = el("a", "btn " + cls, label);
+    if (href && session.provider !== Demo) { a.href = href; a.target = "_blank"; a.rel = "noopener noreferrer"; }
+    a.onclick = ev => { if (session.provider === Demo) ev.preventDefault(); };
+    return a;
+  };
+  if (isDone) {
+    act.append(el("span", fresh.has(s.id) ? "state" : "state still", "Sendt")); fresh.delete(s.id);
+  } else if (st === "busy") act.append(el("span","state wait","Sender …"));
   else if (st === "fail") {
     act.append(el("span","state bad","Feilet"));
     const r = el("button","btn red","Prøv igjen"); r.onclick = () => run([s]); act.append(r);
+  } else if (still) {
+    if (href) act.append(pageLink("Åpne avmeldingsside", "red"));
+    if (s.oneClick || s.mailto) { const r = el("button","btn","Send på nytt"); r.onclick = () => run([s]); act.append(r); }
   } else if (s.oneClick || s.mailto) {
-    const b = el("button","btn red", method(s)); b.onclick = () => run([s]); act.append(b);
+    const b = el("button","btn red","Meld av"); b.onclick = () => run([s]); act.append(b);
   } else {
-    const href = safeHttps(s.https);
-    const a = el("a","btn red","Åpne avmelding");
-    if (href && session.provider !== Demo) { a.href = href; a.target = "_blank"; a.rel = "noopener noreferrer"; }
+    const a = pageLink("Åpne avmelding", "red");
     a.title = "Denne avsenderen krever at du bekrefter på deres side";
-    a.onclick = e => { if (session.provider === Demo) e.preventDefault(); state[s.id] = "done"; saveDone(); picked.delete(s.id);
+    const old = a.onclick;
+    a.onclick = ev => { old(ev); sentLog[s.id] = { t: Date.now(), via: ["page"] }; state[s.id] = "done"; saveDone(); picked.delete(s.id);
       toast("Bekreft avmeldingen på siden som åpnet seg."); render(); };
     act.append(a);
   }
-  li.append(who, act);
+
+  // Details: exactly what Mailmap found and will use, so the user (or a developer) can check it.
+  const det = el("details","det"), sum = el("summary","","Detaljer");
+  const dl = el("dl");
+  const row = (k, v) => { if (v) dl.append(el("dt","",k), el("dd","",v)); };
+  row("Metode", describe(s));
+  row("List-Unsubscribe", s.rawUnsub);
+  row("List-Unsubscribe-Post", s.rawPost || "(mangler – avsenderen støtter ikke ett klikk)");
+  if (e && e.t) row("Sendt", new Date(e.t).toLocaleString("nb-NO"));
+  if (s.last) row("Siste e-post", new Date(s.last).toLocaleString("nb-NO"));
+  det.append(sum, dl);
+  if (isDone && href) det.append(pageLink("Sjekk hos avsender", "small"));
+  const cp = el("button","btn small","Kopier detaljer");
+  cp.onclick = async () => {
+    const text = [...dl.children].reduce((acc, x, i, arr) => i % 2 ? acc : acc + x.textContent + ": " + arr[i+1].textContent + "\n", s.name + "\n");
+    try { await navigator.clipboard.writeText(text); toast("Detaljene er kopiert."); } catch { toast("Kopiering ble blokkert av nettleseren."); }
+  };
+  det.append(cp);
+  li.append(who, act, det);
   return li;
 }
 
@@ -404,12 +469,15 @@ async function run(list){
   render();
   let ok = 0, bad = 0;
   await pool(auto, 4, async s => {
-    try { const r = await unsubscribe(s); if (r === "done") { state[s.id] = "done"; fresh.add(s.id); stay.add(s.id); } ok++; }
-    catch (e) { state[s.id] = "fail"; bad++; if (/utløpt/.test(e.message)) toast(e.message); }
+    try {
+      const via = await unsubscribe(s);
+      sentLog[s.id] = { t: Date.now(), via };
+      state[s.id] = "done"; fresh.add(s.id); stay.add(s.id); ok++;
+    } catch (e) { state[s.id] = "fail"; bad++; if (/utløpt/.test(e.message)) toast(e.message); }
     saveDone(); render();
   });
   if (manual.length) toast(`${manual.length} avsender${manual.length === 1 ? "" : "e"} krever at du bekrefter på deres side. Trykk «Åpne avmelding» på dem.`);
-  else if (ok && !bad) toast(ok === 1 ? "Avmeldt." : `Avmeldt fra ${ok} nyhetsbrev.`);
+  else if (ok && !bad) toast(`Avmelding sendt til ${ok === 1 ? "1 avsender" : ok + " avsendere"}. Åpne Mailmap igjen om et par dager for å se om de har stoppet.`);
   else if (bad) toast(`${bad} feilet. Trykk «Prøv igjen».`);
 }
 
@@ -422,12 +490,12 @@ $("more").onclick = () => { shown += 50; render(); };
 $("q").addEventListener("input", e => { query = e.target.value; shown = 50; render(); });
 $("all").onchange = e => {
   const q = query.trim().toLowerCase();
-  items.filter(s => s.kind === "sub" && state[s.id] !== "done" && state[s.id] !== "busy" &&
+  items.filter(s => s.kind === "sub" && (state[s.id] !== "done" || stillSending(s)) && state[s.id] !== "busy" &&
     (!q || (s.name + " " + s.domain).toLowerCase().includes(q)))
     .forEach(s => e.target.checked ? picked.add(s.id) : picked.delete(s.id));
   render();
 };
-$("bulk").onclick = () => run(items.filter(s => picked.has(s.id) && state[s.id] !== "done" && state[s.id] !== "busy"));
+$("bulk").onclick = () => run(items.filter(s => picked.has(s.id) && state[s.id] !== "busy" && (state[s.id] !== "done" || stillSending(s))));
 $("out").onclick = () => {
   session.provider?.revoke(session.token);
   Object.assign(session, { provider: null, token: null, email: "" });

@@ -118,6 +118,19 @@ h2{font:800 clamp(32px,7vw,42px)/1 var(--display);margin:0;text-wrap:balance}
 @keyframes stamp{from{transform:rotate(-12deg) scale(1.8);opacity:0}to{transform:rotate(-12deg) scale(1);opacity:1}}
 .state.wait{border:0;width:auto;height:auto;margin:0;transform:none;animation:none;color:var(--mute);font:600 15px/1 var(--body);letter-spacing:0;text-transform:none}
 .state.bad{border:0;width:auto;height:auto;margin:0;transform:none;animation:none;color:var(--red);font:600 15px/1 var(--body);letter-spacing:0;text-transform:none}
+.row{flex-wrap:wrap}
+.who .flag,.who .note{white-space:normal;margin-top:4px;font-size:14px}
+.who .flag{color:var(--red);font-weight:600}
+.who .flag::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);margin-right:7px;vertical-align:1px}
+.who .note.quiet{color:var(--ok);font-weight:600}
+.det{flex-basis:100%;margin-left:98px;font-size:14px;color:var(--mute)}
+.det summary{cursor:pointer;width:max-content;font-weight:600;color:var(--mute);padding:4px 0}
+.det summary:hover{color:var(--ink)}
+.det dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 12px;margin:8px 0 10px;padding:12px;border:2px dashed var(--sunk);border-radius:8px}
+.det dt{font-weight:600;color:var(--ink)}
+.det dd{margin:0;overflow-wrap:anywhere;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+.det .btn{margin:0 8px 6px 0}
+.btn.small{padding:6px 12px;font-size:14px;min-height:36px;box-shadow:2px 2px 0 var(--ink)}
 .empty{padding:32px 16px;color:var(--mute);text-align:center}
 .showmore{margin:16px auto 0;display:flex}
 
@@ -131,6 +144,8 @@ h2{font:800 clamp(32px,7vw,42px)/1 var(--display);margin:0;text-wrap:balance}
 .toast.on{opacity:1}
 
 @media (max-width:480px){
+  .det{margin-left:0}
+  .det dl{grid-template-columns:minmax(0,1fr)}
   .mast{padding-block:14px 28px}
   .row{flex-wrap:wrap}
   .act{width:100%;padding-left:98px}
