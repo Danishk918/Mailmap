@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mailmap"
+version = "0.1.0"
+description = "Find where your e-mail address is registered and unsubscribe – locally, headers only."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Danish" }]
+dependencies = []
+
+[project.optional-dependencies]
+outlook = ["msal>=1.24"]
+dev = ["pytest>=8"]
+
+[project.scripts]
+mailmap = "mailmap.cli:main"
+
+[tool.setuptools]
+packages = ["mailmap"]

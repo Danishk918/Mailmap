@@ -1,0 +1,8 @@
+__pycache__/
+*.egg-info/
+.venv/
+.pytest_cache/
+# Personal scan output – never commit
+mailmap*.json
+mailmap*.html
+*.mbox
