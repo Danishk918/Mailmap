@@ -15,7 +15,8 @@ Workflowen `pages.yml` publiserer `web/` til `https://danishk918.github.io/Mailm
 3. *Google Auth Platform* (OAuth consent screen) → *External* → fyll inn navn og e-post.
 4. *Data access* → legg til `gmail.metadata` og `gmail.send`.
 5. *Clients* → *Create client* → **Web application** → *Authorized JavaScript origins*:
-   `https://danishk918.github.io` og `http://localhost:8000`.
+   `https://danishk918.github.io` og `http://localhost:8000`. *Authorized redirect URIs*:
+   `https://danishk918.github.io/Mailmap/` og `http://localhost:8000/` (innloggingen skjer i samme fane og kommer tilbake hit).
 6. Kopier *Client ID* inn i `web/config.js` → `googleClientId`.
 7. *Branding* → *Application home page* `https://danishk918.github.io/Mailmap/`, *Privacy policy*
    `https://danishk918.github.io/Mailmap/personvern.html`, *Authorized domains* `danishk918.github.io`.

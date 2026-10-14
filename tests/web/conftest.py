@@ -69,6 +69,7 @@ class FakeMail:
                        "maxMessages": 3000, "retryBaseMs": 5, **(config or {})}
         self.fail_gets = fail_gets        # Gmail answers 403 rateLimitExceeded this many times (-1 = always)
         self.gets = 0
+        self.google_auth, self.google_error = [], None
         self.posted, self.gmail_sent, self.graph_sent, self.auth, self.stats = [], [], [], [], []
 
     def route(self, route):
@@ -78,10 +79,16 @@ class FakeMail:
         if "/config.js" in u:
             return route.fulfill(content_type="application/javascript",
                                  body="window.MAILMAP_CONFIG=" + json.dumps(self.config) + ";")
-        if "accounts.google.com/gsi/client" in u:
-            return route.fulfill(content_type="application/javascript", body=(
-                "window.google={accounts:{oauth2:{initTokenClient:o=>({requestAccessToken:()=>"
-                "setTimeout(()=>o.callback({access_token:'G-TOKEN'}),5)}),revoke:()=>{}}}};"))
+        # Google OAuth (token flow, same tab): back to Mailmap with the token in the #fragment
+        if "accounts.google.com/o/oauth2/v2/auth" in u:
+            q = urllib.parse.parse_qs(urllib.parse.urlparse(u).query)
+            assert q["response_type"] == ["token"] and "gmail.metadata" in q["scope"][0]
+            self.google_auth.append(q)
+            frag = {"state": q["state"][0], "error": self.google_error} if self.google_error else \
+                {"access_token": "G-TOKEN", "token_type": "Bearer", "state": q["state"][0], "scope": q["scope"][0]}
+            return route.fulfill(status=302, headers={"Location": q["redirect_uri"][0] + "#" + urllib.parse.urlencode(frag)})
+        if "oauth2.googleapis.com/revoke" in u:
+            return route.fulfill(body="")
         if "fonts.googleapis.com" in u or "fonts.gstatic.com" in u:
             return route.abort()
         if "stats.test/count" in u:       # the visit counter (GoatCounter in production)

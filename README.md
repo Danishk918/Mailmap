@@ -36,10 +36,11 @@ sender allows it, on the sender's own page where it doesn't. No server; everythi
 | Ingen server | OAuth skjer direkte mellom nettleseren og Google/Microsoft. Tokenet ligger kun i minnet og forsvinner når fanen lukkes. |
 | Minste nødvendige tilgang | Google: `gmail.metadata` (kan ikke lese innhold) + `gmail.send`. Microsoft: `Mail.Read` + `Mail.Send`. |
 | PKCE uten hemmelighet | Microsoft-innloggingen bruker Authorization Code + PKCE med `state`-sjekk. Koden fjernes fra adresselinjen med en gang. |
+| Innlogging i samme fane | Google-innloggingen går til Google og tilbake i samme fane, også på iPhone, der Safari bryter innloggingsvinduer. Mailmap sjekker `state` (en falsk retur avvises), og tokenet fjernes fra adresselinjen med en gang. |
 | All e-post er fiendtlig input | Avsendernavn og emner vises kun via `textContent`. Lenker godtas kun med `https:` og `mailto:`. |
 | Header-injeksjon blokkert | `mailto:`-lenker valideres (én adresse) og linjeskift fjernes fra emnet, så en avsender ikke kan smugle inn `Bcc`. |
 | Forfalskning blokkert | Avsenderadressen tolkes før visningsnavnet dekodes, så et kodet navn (`=?utf-8?…?=`) ikke kan endre adressen. |
-| Streng CSP | Kun egne skript + Googles innloggingsskript. Ingen `eval`, ingen inline-skript. |
+| Streng CSP | Kun egne skript, ingen fra Google eller andre. Ingen `eval`, ingen inline-skript, ingen innebygde rammer. |
 | Bare kjente e-postlenker | «Åpne siste e-post» godtar bare lenker til Gmail (bygget av Mailmap) og Outlooks egne domener, aldri en lenke fra avsenderen. |
 | Anonym telling, uten fremmed kode | Besøk og bruk telles med [GoatCounter](https://www.goatcounter.com/) uten informasjonskapsler. Mailmap sender tellingen selv i stedet for å laste GoatCounters skript, så CSP-en er like streng. Bare faste navn sendes (`/`, `demo`, `login-google`, `login-microsoft`, `unsubscribe`), aldri e-postdata. En test sjekker dette. |
 | Ingen kontoenumerering | Verktøyet sjekker aldri nettsider for om e-posten er registrert. Det ser bare på e-post brukeren har mottatt. |
@@ -48,8 +49,8 @@ sender allows it, on the sender's own page where it doesn't. No server; everythi
 
 To sett med tester kjører automatisk på GitHub ved hver endring:
 
-- **Nettsiden** (`tests/web`, 23 tester): siden kjøres i en ekte nettleser (Chromium) mot falske Google- og
-  Microsoft-tjenester, så det trengs ingen kontoer eller nett. Dekker innlogging (PKCE og Google), lesing kun av headere,
+- **Nettsiden** (`tests/web`, 25 tester): siden kjøres i en ekte nettleser (Chromium) mot falske Google- og
+  Microsoft-tjenester, så det trengs ingen kontoer eller nett. Dekker innlogging (PKCE, og Google i samme fane med avvisning av falske returer), lesing kun av headere,
   avmelding (RFC 8058 `POST` og e-post), «Velg alle» og søk med 60 avsendere, Googles fartsgrense (ny forsøk, tidlig liste, delvise resultater), oppfølging («Sender fortsatt»),
   og sikkerhet: XSS i avsendernavn og emne, `javascript:`-lenker, header-injeksjon i `mailto:`, forfalskede
   avsendernavn, at bare Outlook/Gmail-lenker godtas, at den strenge CSP-en ikke blokkerer noe siden trenger, og at besøkstellingen aldri får med e-postadresser, avsendere eller innloggingskoder.
@@ -85,7 +86,7 @@ pytest -q
 ## Teknisk
 
 - **Ingen rammeverk og ingen byggesteg:** ren HTML, CSS og JavaScript i `web/`, publisert med GitHub Pages.
-- **Innlogging:** Google Identity Services og Microsoft (OAuth 2.0 Authorization Code + PKCE), direkte fra nettleseren.
+- **Innlogging:** Google (OAuth 2.0, tokenflyt med retur til siden) og Microsoft (Authorization Code + PKCE), begge i samme fane, direkte fra nettleseren.
 - **API-er:** Gmail API (kun `format=metadata`) og Microsoft Graph (`internetMessageHeaders`).
 - **Statistikk:** anonym telling til GoatCounter via `stats` i `config.js` (fjern linjen for å slå av, f.eks. i en fork).
 - **Deling:** Open Graph-tagger og eget delingsbilde (`web/og.png`), så lenken vises som et kort på LinkedIn.

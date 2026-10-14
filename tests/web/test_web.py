@@ -294,3 +294,21 @@ def test_visit_counter_sends_only_fixed_names(open_app):
 
     demo, fake2 = open_app(provider="demo")             # no stats URL configured: nothing is counted
     assert fake2.stats == []
+
+
+def test_google_sign_in_stays_in_the_same_tab(open_app):
+    """Google's popup broke on iPhone Safari; sign-in now goes to Google and back in one tab."""
+    page, fake = open_app(basic_inbox(), "google")
+    assert len(page.context.pages) == 1                 # no popup tab
+    assert fake.google_auth[0]["redirect_uri"][0].endswith("/") and fake.google_auth[0]["state"][0]
+    assert "access_token" not in page.url and "#" not in page.url   # token removed from the address bar
+    assert page.inner_text("#who") == "me@test.no"
+    assert page.errors == []
+
+
+def test_google_sign_in_rejects_a_forged_return(open_app, base_url):
+    page, fake = open_app(provider=None)
+    page.goto("about:blank")                            # a real page load, not just a #hash change
+    page.goto(base_url + "#access_token=STOLEN&state=guess&scope=gmail.metadata")   # not started by this tab
+    assert "kunne ikke bekreftes" in page.inner_text("#startErr")
+    assert fake.auth == [] and "STOLEN" not in page.url

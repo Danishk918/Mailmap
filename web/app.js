@@ -155,24 +155,28 @@ function parseMailto(m){
 /* ================================================================ Google */
 const Google = {
   scope: "https://www.googleapis.com/auth/gmail.metadata https://www.googleapis.com/auth/gmail.send",
-  client: null,
-  load(){
-    if (!CFG.googleClientId || document.getElementById("gsi")) return;
-    const s = document.createElement("script");
-    s.id = "gsi"; s.src = "https://accounts.google.com/gsi/client"; s.async = true;
-    s.onload = () => {
-      Google.client = google.accounts.oauth2.initTokenClient({
-        client_id: CFG.googleClientId, scope: Google.scope,
-        callback: r => r.error ? showErr("Google-innloggingen ble avbrutt.") : start(Google, r.access_token),
-        error_callback: () => showErr("Google-innloggingen ble avbrutt."),
-      });
-    };
-    document.head.append(s);
-  },
+  // Sign-in happens in the same tab (OAuth 2.0 token flow with redirect), like Microsoft. Google's popup
+  // flow broke on iPhone: Safari opens the popup as a separate tab and loses the way back to Mailmap.
+  auth: "https://accounts.google.com/o/oauth2/v2/auth",
   signIn(){
     if (!CFG.googleClientId) return showErr("Google-innlogging er ikke satt opp ennå. Legg inn googleClientId i config.js (se README).");
-    if (!Google.client) return showErr("Google laster fortsatt. Prøv igjen om et øyeblikk.");
-    Google.client.requestAccessToken();   // must run directly in the click for the popup
+    const state = b64url(crypto.getRandomValues(new Uint8Array(16)));
+    sessionStorage.setItem("mm-g-state", state);
+    const p = new URLSearchParams({ client_id: CFG.googleClientId, redirect_uri: Microsoft.redirect(), response_type: "token",
+      scope: Google.scope, state, include_granted_scopes: "false", prompt: "select_account" });
+    location.assign(`${Google.auth}?${p}`);
+  },
+  handleRedirect(){
+    const q = new URLSearchParams(location.hash.slice(1));
+    if (!q.has("access_token") && !q.has("error")) return false;
+    history.replaceState(null, "", Microsoft.redirect());          // keep the token out of the address bar and history
+    const saved = sessionStorage.getItem("mm-g-state");
+    sessionStorage.removeItem("mm-g-state");
+    if (!saved || q.get("state") !== saved) { showErr("Innloggingen kunne ikke bekreftes. Prøv igjen."); return true; }
+    if (q.has("error")) { showErr("Google-innloggingen ble avbrutt."); return true; }
+    if (!(q.get("scope") || "").includes("gmail.metadata")) { showErr("Mailmap trenger tilgang til å lese e-posthodene. Prøv igjen og huk av for tilgangene."); return true; }
+    start(Google, q.get("access_token"));
+    return true;
   },
   async who(t){ return (await api("https://gmail.googleapis.com/gmail/v1/users/me/profile", t)).emailAddress; },
   async listIds(t, label, max){
@@ -220,7 +224,7 @@ const Google = {
     await api("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", t,
       { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ raw: utf8b64url(raw) }) });
   },
-  revoke(t){ try { google.accounts.oauth2.revoke(t, () => {}); } catch {} },
+  revoke(t){ fetch("https://oauth2.googleapis.com/revoke?token=" + encodeURIComponent(t), { method: "POST", mode: "no-cors" }).catch(() => {}); },
 };
 
 /* ================================================================ Microsoft (PKCE, no secret) */
@@ -653,7 +657,7 @@ function gWarn(show){
 }
 $("gBtn").onclick = () => gWarn(true);
 $("gBack").onclick = () => gWarn(false);
-$("gGo").onclick = () => Google.signIn();   // must stay a direct click handler, or the browser blocks Google's popup
+$("gGo").onclick = () => Google.signIn();
 $("mBtn").onclick = () => Microsoft.signIn();
 $("demoBtn").onclick = () => start(Demo, "demo");
 $("tabs").onclick = e => { const b = e.target.closest("button"); if (!b) return; view = b.dataset.v; shown = 50; stay.clear(); render(); };
@@ -676,6 +680,7 @@ $("out").onclick = () => {
   show("vStart");
 };
 
-Google.load();
-if (!/[?&](code|error)=/.test(location.search)) track("/");   // a return from Microsoft login is not a new visit
+// A return from Google or Microsoft sign-in is not a new visit.
+if (!/[?&](code|error)=/.test(location.search) && !/(access_token|error)=/.test(location.hash)) track("/");
+Google.handleRedirect();
 Microsoft.handleRedirect().catch(e => showErr(e.message));
