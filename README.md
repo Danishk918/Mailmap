@@ -9,9 +9,9 @@ sender allows it, on the sender's own page where it doesn't. No server; everythi
 **Prøv den:** [danishk918.github.io/Mailmap](https://danishk918.github.io/Mailmap/) – «Prøv uten å logge inn» viser en demo med eksempeldata.
 [Personvernerklæring](https://danishk918.github.io/Mailmap/personvern.html)
 
-![Mailmap på PC og mobil: liste over nyhetsbrev med Meld av-knapper, et SENDT-stempel og en avsender merket «Må gjøres manuelt»](docs/preview.png)
+![Mailmap: liste over nyhetsbrev med Meld av-knapper, et SENDT-stempel og en avsender merket «Må gjøres manuelt»](docs/web.png)
 
-*Demoen med eksempeldata, på PC og mobil.*
+*Demoen med eksempeldata.*
 
 ## Slik virker det
 

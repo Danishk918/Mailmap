@@ -8,6 +8,5 @@
   `https:`/`mailto:`-lenker, og ingen inline-skript (streng CSP).
 - Commit-forfatter: `Danish <200293618+Danishk918@users.noreply.github.com>`. Aldri en ekte e-postadresse.
 - Repoet heter `Danishk918/Mailmap` (stor M). Siden: https://danishk918.github.io/Mailmap/
-- Skjermbildet i README er `docs/preview.png` (PC og mobil satt sammen), vist med vanlig Markdown `![](docs/preview.png)`.
-  Ikke bruk HTML-`<img>` eller `?v=` på bildestier: GitHub-mobilappen viser dem ikke. Lag `preview.png` på nytt
-  fra `docs/web.png` og `docs/web-mobile.png` når skjermbildene tas på nytt.
+- Skjermbildet i README er `docs/web.png` (PC-versjonen, ett bilde), vist med vanlig Markdown `![](docs/web.png)`.
+  Ikke bruk HTML-`<img>` eller `?v=` på bildestier: GitHub-mobilappen viser dem ikke. Ta bildet på nytt når siden endres.
