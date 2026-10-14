@@ -24,4 +24,11 @@ jobs:
           python-version: "3.12"
       - run: pip install -e ".[web]"
       - run: python -m playwright install --with-deps chromium
-      - run: pytest -q tests/web
+      - name: pytest tests/web
+        # Failures are also posted as annotations, so they can be read without downloading the log.
+        run: |
+          set -o pipefail
+          pytest -q -rf tests/web 2>&1 | tee pytest.log || {
+            grep -E '^(FAILED|E +)' pytest.log | head -30 | sed 's/^/::error::/'
+            exit 1
+          }
