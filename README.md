@@ -33,6 +33,9 @@ sender allows it, on the sender's own page where it doesn't. No server; everythi
    **«Sjekk hos avsender»**, som åpner den siste avmeldingslenken avsenderen sendte. Noen ett-klikks-adresser tar
    bare imot `POST` og viser en feilside i nettleseren. Da finnes **«Åpne siste e-post»** under *Detaljer*, som åpner
    den siste e-posten fra avsenderen i Gmail eller Outlook, der avmeldingslenken nederst virker.
+   Åpnes en ett-klikks-lenke i nettleseren, ber avsenderen nesten alltid om bekreftelse (pause, skriv e-post, bekreft).
+   Det er med vilje: bare `POST`-en Mailmap sender melder av direkte, så lenkeskannere ikke kan melde folk av ved uhell.
+   Mailmap forklarer dette når siden åpnes.
    Når du har sjekket, merkes avsenderen «Du har sjekket hos avsenderen».
    Lenker til e-post godtas bare til `mail.google.com` (bygget av Mailmap) og Outlooks egne domener.
    Mailmap husker også når hver avmelding ble sendt (lagret lokalt i nettleseren) og sjekker selv neste gang:

@@ -337,7 +337,7 @@ function copyEmail(extra = ""){
 
 function show(v){ ["vStart","vRead","vList"].forEach(x => $(x).hidden = x !== v); $("dock").hidden = true; }
 function showErr(msg){ show("vStart"); $("signin").hidden = false; $("gWarn").hidden = true; const e = $("startErr"); e.textContent = msg; e.hidden = false; }
-function toast(msg){ const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("on"), 2600); }
+function toast(msg){ const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("on"), Math.max(2600, msg.length * 55)); }
 
 async function start(provider, token){
   session.provider = provider; session.token = token;
@@ -452,7 +452,10 @@ function subRow(s){
     return a;
   };
   const FALLBACK = s.oneClick && s.mailLink ? "Viser siden en feil, åpne Detaljer → «Åpne siste e-post»." : "";
-  const checkBtn = (label, cls) => href ? pageLink(label, cls, FALLBACK) : (s.mailLink ? mailBtn(label, cls) : null);
+  // Opening an unsubscribe link in a browser (GET) never unsubscribes by itself – senders ask you to
+  // confirm, so link scanners can't unsubscribe people by accident. Say so, or users think it failed.
+  const CONFIRM = s.oneClick ? "Ber siden deg bekrefte, velge pause eller skrive e-post, er det normalt. Trykk bekreft for å være sikker." : "";
+  const checkBtn = (label, cls) => href ? pageLink(label, cls, [CONFIRM, FALLBACK].filter(Boolean).join(" ")) : (s.mailLink ? mailBtn(label, cls) : null);
   if (isDone) {
     act.append(el("span", fresh.has(s.id) ? "state" : "state still", "Sendt")); fresh.delete(s.id);
     const c = !(e && e.checked) && verdict(s) !== "quiet" ? checkBtn("Sjekk hos avsender", "small") : null;
