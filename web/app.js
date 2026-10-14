@@ -434,7 +434,7 @@ function subRow(s){
     who.append(el("span", "note " + (e.checked && v !== "quiet" ? "quiet" : v), when + tail));
     // Visiting a one-click link in the browser always asks for confirmation – say it up front.
     if (s.oneClick && v !== "quiet")
-      who.append(el("span", "hint", "Sjekker du hos avsenderen, ber de deg bekrefte. Det er normalt og betyr ikke at det feilet."));
+      who.append(el("span", "hint", "Sjekker du hos avsenderen, kan de be deg bekrefte. Det er normalt og betyr ikke at det feilet."));
   }
   const act = el("div","act");
   const pageLink = (label, cls, extra) => {
