@@ -1,4 +1,4 @@
-// Fill in your own (free) client IDs – see README, "Sett opp innlogging".
+// Fill in your own (free) client IDs – see docs/OPPSETT.md.
 // Client IDs are public by design; there is no secret in this file.
 window.MAILMAP_CONFIG = {
   googleClientId: "797405020389-jcoj0jhni2au60i0thl6ael6s8m6geb6.apps.googleusercontent.com",

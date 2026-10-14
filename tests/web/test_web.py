@@ -192,3 +192,15 @@ def test_demo_fits_a_phone_screen(open_app):
     page.wait_for_timeout(500)
     assert page.evaluate("document.documentElement.scrollWidth") <= 390
     assert page.errors == []
+
+
+def test_link_preview_for_sharing(base_url):
+    """LinkedIn and others build the link card from these Open Graph tags."""
+    import re
+    from conftest import WEB
+    html = (WEB / "index.html").read_text(encoding="utf-8")
+    tags = dict(re.findall(r'<meta (?:property|name)="([^"]+)" content="([^"]*)"', html))
+    assert tags["og:title"] and tags["og:description"] and tags["description"]
+    assert tags["og:image"] == "https://danishk918.github.io/Mailmap/og.png"
+    assert tags["og:url"] == "https://danishk918.github.io/Mailmap/"
+    assert (WEB / "og.png").stat().st_size > 10_000
