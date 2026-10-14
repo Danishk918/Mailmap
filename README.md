@@ -14,7 +14,8 @@ sender allows it, on the sender's own page where it doesn't. No server; everythi
 
 ## Slik virker det
 
-1. Brukeren logger inn med Microsoft (Outlook/Hotmail). Google (Gmail) er bygget inn, men ikke satt opp ennå.
+1. Brukeren logger inn med Microsoft (Outlook/Hotmail) eller Google (Gmail). Gmail-innloggingen står i Googles testmodus,
+   så bare Gmail-adresser som er lagt til som testbrukere kan logge inn (se Begrensninger).
 2. Siden leser **kun headerne** (`From`, `Subject`, `Date`, `List-Unsubscribe`) i de nyeste e-postene.
 3. Avsendere grupperes per tjeneste. Alt med avmeldingslenke vises som abonnement, sortert etter hvem som sender mest.
 4. Brukeren trykker **Meld av** på én avsender, eller huker av flere (eller **Velg alle**) og melder av samtidig.
