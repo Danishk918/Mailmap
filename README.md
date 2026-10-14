@@ -3,18 +3,29 @@
 **Logg inn med Google eller Microsoft, se alt du er abonnert på, og meld deg av med ett trykk.**
 *Sign in with Google or Microsoft, see every newsletter you're subscribed to, and unsubscribe in one click. No server – everything runs in your browser.*
 
+**Prøv den:** [danishk918.github.io/Mailmap](https://danishk918.github.io/Mailmap/) – «Prøv uten å logge inn» viser en demo med eksempeldata.
+
 ![Mailmap](docs/web.png)
 
 ## Slik virker det
 
-1. Brukeren logger inn med Google (Gmail) eller Microsoft (Outlook/Hotmail).
+1. Brukeren logger inn med Microsoft (Outlook/Hotmail). Google (Gmail) er bygget inn, men ikke satt opp ennå.
 2. Siden leser **kun headerne** (`From`, `Subject`, `Date`, `List-Unsubscribe`) i de nyeste e-postene.
-3. Avsendere grupperes per tjeneste. Alt med avmeldingslenke vises som abonnement.
-4. Brukeren trykker **Meld av** (én og én, eller flere samtidig). Avmeldingen skjer på siden:
+3. Avsendere grupperes per tjeneste. Alt med avmeldingslenke vises som abonnement, sortert etter hvem som sender mest.
+4. Brukeren trykker **Meld av** på én avsender, eller huker av flere (eller **Velg alle**) og melder av samtidig.
+   Et **søkefelt** filtrerer lista. Mailmap bruker alle automatiske veier avsenderen tilbyr:
    - **Ett klikk (RFC 8058):** siden sender en `POST` til avsenderens avmeldingsadresse.
-   - **Via e-post:** siden sender avmeldings-e-posten fra brukerens egen konto.
-   - Noen få avsendere krever bekreftelse på egen side – da åpnes den i ny fane.
-5. Kontoer uten avmelding (velkomst- og passord-e-poster) vises separat, med ferdig GDPR-slettebrev.
+   - **Via e-post:** siden sender avmeldings-e-posten fra brukerens egen konto. Dette behandles av avsenderens
+     egne servere og er den mest robuste veien.
+5. **Avsendere uten automatisk avmelding** er merket «Må gjøres manuelt på avsenderens side». «Åpne avmelding»
+   åpner siden deres og kopierer samtidig brukerens e-postadresse, så den kan limes inn der siden spør etter den.
+6. **Etterpå sjekker Mailmap selv om det virket.** Resultatet merkes «Sendt», ikke «Avmeldt», fordi nettleseren ikke
+   får lese avsenderens svar. Mailmap husker når hver avmelding ble sendt (lagret lokalt i nettleseren):
+   - Ingen nye e-poster etter avmeldingen: «Ingen nye e-poster siden».
+   - Nye e-poster mer enn to dager etter: «Sender fortsatt». Avsenderen legges tilbake øverst i lista, med knapp
+     til avsenderens egen avmeldingsside.
+7. **Detaljer** på hver avsender viser nøyaktig hvilken `List-Unsubscribe`-header og metode som brukes.
+8. Kontoer uten avmelding (velkomst- og passord-e-poster) vises i en egen fane, med ferdig GDPR-slettebrev.
 
 ## Sikkerhet og personvern
 
@@ -66,6 +77,11 @@ Uten oppsett fungerer **«Prøv uten å logge inn»** med eksempeldata.
 - Ved ett-klikks avmelding kan ikke nettleseren lese svaret fra avsenderen (CORS), så siden vet at forespørselen ble sendt,
   ikke at avsenderen godtok den.
 - Bare de nyeste e-postene leses (`maxMessages`, standard 3000), for å holde seg innenfor Googles fartsgrenser.
+- «Sendt»-status og datoer lagres bare i nettleseren der avmeldingen ble gjort. En annen enhet vet ikke om dem.
+- Avsendere som bare tilbyr et skjema på egen nettside, kan ikke meldes av automatisk. Nettleseren tillater ikke
+  at en side fyller ut skjemaer på en annen side.
+- Hver versjon får et versjonsnummer på skriptene (`?v=<commit>`), så telefoner og hjemskjerm-ikoner henter ny kode
+  etter publisering. Selve siden kan likevel være mellomlagret i opptil 10 minutter.
 
 ## Kommandolinjeversjonen
 
