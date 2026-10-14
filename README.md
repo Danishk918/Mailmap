@@ -17,6 +17,8 @@ sender allows it, on the sender's own page where it doesn't. No server; everythi
 
 1. Brukeren logger inn med Microsoft (Outlook/Hotmail) eller Google (Gmail). Begge er åpne for alle. Google viser et
    varsel om at appen ikke er verifisert, og Gmail er begrenset til 100 brukere totalt (se Begrensninger).
+   Før Google-innloggingen forklarer Mailmap hvorfor varselet kommer og hva brukeren skal trykke, med lenke til
+   personvernerklæringen og koden.
 2. Siden leser **kun headerne** (`From`, `Subject`, `Date`, `List-Unsubscribe`) i de nyeste e-postene.
 3. Avsendere grupperes per tjeneste. Alt med avmeldingslenke vises som abonnement, sortert etter hvem som sender mest.
 4. Brukeren trykker **Meld av** på én avsender, eller huker av flere (eller **Velg alle**) og melder av samtidig.

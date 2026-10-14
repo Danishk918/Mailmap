@@ -65,6 +65,12 @@ h2{font:800 clamp(32px,7vw,42px)/1 var(--display);margin:0;text-wrap:balance}
 .trust p::before{content:"";position:absolute;left:2px;top:.5em;width:14px;height:8px;border-left:3px solid var(--ok);border-bottom:3px solid var(--ok);transform:rotate(-45deg)}
 .links{display:flex;gap:20px;flex-wrap:wrap;margin:28px 0 0;font-size:15px}
 .links a{color:var(--ink);font-weight:600;text-underline-offset:3px}
+.gwarn{max-width:520px;background:var(--card);border:2px solid var(--ink);border-radius:10px;box-shadow:var(--shadow);padding:20px 22px;display:grid;gap:12px}
+.gwarn h2{font-size:clamp(26px,6vw,32px);outline:none}
+.gwarn p{margin:0}
+.gwarn ol{margin:0;padding-left:22px;display:grid;gap:6px}
+.gwarn-act{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:4px}
+.gwarn .small a{color:var(--ink)}
 .err{color:var(--red);font-weight:600;margin:16px 0 0}
 
 /* reading: an envelope-coloured progress strip */
@@ -168,7 +174,7 @@ h2{font:800 clamp(32px,7vw,42px)/1 var(--display);margin:0;text-wrap:balance}
   <section id="vStart">
     <h1>Alle nyhetsbrevene dine, samlet på ett sted</h1>
     <p class="lede">Logg inn med e&#8209;postkontoen din. Mailmap samler alt du er abonnert på i én liste. Mange kan du melde deg av direkte herfra. Noen krever at du bekrefter på avsenderens egen side.</p>
-    <div class="signin">
+    <div class="signin" id="signin">
       <button class="btn line" id="gBtn">
         <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.7 6c4.5-4.2 6.9-10.3 6.9-17.7z"/><path fill="#FBBC05" d="M10.6 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.7-6c-2.2 1.5-5 2.3-8.2 2.3-6.2 0-11.5-4.1-13.4-9.8l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg>
         Logg inn med Google
@@ -179,6 +185,21 @@ h2{font:800 clamp(32px,7vw,42px)/1 var(--display);margin:0;text-wrap:balance}
       </button>
       <button class="btn quiet" id="demoBtn">Prøv uten å logge inn</button>
     </div>
+    <section class="gwarn" id="gWarn" hidden aria-labelledby="gWarnTitle">
+      <h2 id="gWarnTitle" tabindex="-1">Før du logger inn med Google</h2>
+      <p>Google viser et varsel om at appen ikke er bekreftet. Det er fordi Mailmap er et gratis studentprosjekt, og Googles bekreftelse koster penger. Koden er åpen, og siden har ingen server.</p>
+      <ol>
+        <li>Google viser <b>«Google har ikke bekreftet appen»</b>.</li>
+        <li>Trykk <b>Avansert</b> nede til venstre.</li>
+        <li>Trykk <b>Gå til danishk918.github.io (utrygt)</b>.</li>
+        <li>Godkjenn tilgangene. Mailmap leser bare avsender, emne og dato.</li>
+      </ol>
+      <div class="gwarn-act">
+        <button class="btn main" id="gGo">Fortsett til Google</button>
+        <button class="btn quiet" id="gBack">Avbryt</button>
+      </div>
+      <p class="small"><a href="personvern.html">Les personvernerklæringen</a> eller <a href="https://github.com/Danishk918/Mailmap" target="_blank" rel="noopener noreferrer">se koden på GitHub</a>.</p>
+    </section>
     <p class="err" id="startErr" role="alert" hidden></p>
     <div class="trust">
       <p>Siden leser bare avsender, emne og dato. Aldri innholdet i e&#8209;postene.</p>

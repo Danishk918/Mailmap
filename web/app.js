@@ -328,11 +328,12 @@ function copyEmail(){
 }
 
 function show(v){ ["vStart","vRead","vList"].forEach(x => $(x).hidden = x !== v); $("dock").hidden = true; }
-function showErr(msg){ show("vStart"); const e = $("startErr"); e.textContent = msg; e.hidden = false; }
+function showErr(msg){ show("vStart"); $("signin").hidden = false; $("gWarn").hidden = true; const e = $("startErr"); e.textContent = msg; e.hidden = false; }
 function toast(msg){ const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("on"), 2600); }
 
 async function start(provider, token){
   session.provider = provider; session.token = token;
+  $("signin").hidden = false; $("gWarn").hidden = true;
   $("startErr").hidden = true;
   show("vRead"); $("bar").style.width = "0";
   try {
@@ -512,7 +513,14 @@ async function run(list){
 }
 
 /* ================================================================ events */
-$("gBtn").onclick = () => Google.signIn();
+// Google shows an "unverified app" warning (Mailmap isn't verified by Google). Explain it first.
+function gWarn(show){
+  $("signin").hidden = show; $("gWarn").hidden = !show; $("startErr").hidden = true;
+  (show ? $("gWarnTitle") : $("gBtn")).focus();
+}
+$("gBtn").onclick = () => gWarn(true);
+$("gBack").onclick = () => gWarn(false);
+$("gGo").onclick = () => Google.signIn();   // must stay a direct click handler, or the browser blocks Google's popup
 $("mBtn").onclick = () => Microsoft.signIn();
 $("demoBtn").onclick = () => start(Demo, "demo");
 $("tabs").onclick = e => { const b = e.target.closest("button"); if (!b) return; view = b.dataset.v; shown = 50; stay.clear(); render(); };
