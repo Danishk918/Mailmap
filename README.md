@@ -187,13 +187,20 @@ mailmap/
 
 ## Tester
 
+To sett med tester kjører automatisk på GitHub ved hver endring:
+
+- **Nettsiden** (`tests/web`, 16 tester): siden kjøres i en ekte nettleser (Chromium) mot falske Google- og
+  Microsoft-tjenester, så det trengs ingen kontoer eller nett. Dekker innlogging (PKCE og Google), lesing kun av headere,
+  avmelding (RFC 8058 `POST` og e-post), «Velg alle» og søk med 60 avsendere, oppfølging («Sender fortsatt»),
+  og sikkerhet: XSS i avsendernavn og emne, `javascript:`-lenker, header-injeksjon i `mailto:`, forfalskede
+  avsendernavn, at bare Outlook/Gmail-lenker godtas, og at den strenge CSP-en ikke blokkerer noe siden trenger.
+- **Kommandolinjeversjonen** (`tests/test_mailmap.py`, 18 tester), på Python 3.10, 3.12 og 3.13.
+
 ```bash
-python3 -m pip install -e ".[dev]"
+python3 -m pip install -e ".[web]"
+python3 -m playwright install chromium
 pytest -q
 ```
-
-Testene dekker blant annet XSS-forsøk i avsendernavn, forfalskning via kodede navn,
-ødelagte headere, at IMAP åpnes skrivebeskyttet (falsk IMAP-server) og ende-til-ende-skanning av en `.mbox`.
 
 ## Begrensninger (kommandolinje)
 

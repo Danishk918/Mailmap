@@ -15,6 +15,7 @@ dependencies = []
 [project.optional-dependencies]
 outlook = ["msal>=1.24"]
 dev = ["pytest>=8"]
+web = ["pytest>=8", "playwright>=1.44"]
 
 [project.scripts]
 mailmap = "mailmap.cli:main"

@@ -1,7 +1,7 @@
 name: test
 on: [push, pull_request]
 jobs:
-  test:
+  python:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -12,4 +12,16 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: pip install -e ".[dev]"
-      - run: pytest -q
+      - run: pytest -q tests/test_mailmap.py
+
+  web:
+    # The web app in a real browser (Chromium) against fake Google/Microsoft APIs.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[web]"
+      - run: python -m playwright install --with-deps chromium
+      - run: pytest -q tests/web

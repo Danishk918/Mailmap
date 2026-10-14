@@ -6,6 +6,8 @@
   (legger på `?v=<commit>` på skriptene). Kjør bygget før commit.
 - Alt innhold fra e-post (avsender, emne, headere) er fiendtlig input: vis det kun via `textContent`, godta bare
   `https:`/`mailto:`-lenker, og ingen inline-skript (streng CSP).
+- Kjør `pytest -q` før commit. Nettlesertestene ligger i `tests/web` og kjører i CI; legg til en test når
+  du endrer oppførsel, særlig sikkerhet.
 - Commit-forfatter: `Danish <200293618+Danishk918@users.noreply.github.com>`. Aldri en ekte e-postadresse.
 - Repoet heter `Danishk918/Mailmap` (stor M). Siden: https://danishk918.github.io/Mailmap/
 - Skjermbildet i README er `docs/web.png` (PC-versjonen, ett bilde), vist med vanlig Markdown `![](docs/web.png)`.
