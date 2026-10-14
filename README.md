@@ -15,8 +15,8 @@ sender allows it, on the sender's own page where it doesn't. No server; everythi
 
 ## Slik virker det
 
-1. Brukeren logger inn med Microsoft (Outlook/Hotmail) eller Google (Gmail). Gmail-innloggingen står i Googles testmodus,
-   så bare Gmail-adresser som er lagt til som testbrukere kan logge inn (se Begrensninger).
+1. Brukeren logger inn med Microsoft (Outlook/Hotmail) eller Google (Gmail). Begge er åpne for alle. Google viser et
+   varsel om at appen ikke er verifisert, og Gmail er begrenset til 100 brukere totalt (se Begrensninger).
 2. Siden leser **kun headerne** (`From`, `Subject`, `Date`, `List-Unsubscribe`) i de nyeste e-postene.
 3. Avsendere grupperes per tjeneste. Alt med avmeldingslenke vises som abonnement, sortert etter hvem som sender mest.
 4. Brukeren trykker **Meld av** på én avsender, eller huker av flere (eller **Velg alle**) og melder av samtidig.
@@ -63,10 +63,13 @@ Workflowen `pages.yml` publiserer `web/` til `https://danishk918.github.io/Mailm
 2. *APIs & Services* → *Library* → aktiver **Gmail API**.
 3. *Google Auth Platform* (OAuth consent screen) → *External* → fyll inn navn og e-post.
 4. *Data access* → legg til `gmail.metadata` og `gmail.send`.
-5. *Audience* → la stå på **Testing**, og legg til Gmail-adressene som skal teste.
-6. *Clients* → *Create client* → **Web application** → *Authorized JavaScript origins*:
+5. *Clients* → *Create client* → **Web application** → *Authorized JavaScript origins*:
    `https://danishk918.github.io` og `http://localhost:8000`.
-7. Kopier *Client ID* inn i `web/config.js` → `googleClientId`.
+6. Kopier *Client ID* inn i `web/config.js` → `googleClientId`.
+7. *Branding* → *Application home page* `https://danishk918.github.io/Mailmap/`, *Privacy policy*
+   `https://danishk918.github.io/Mailmap/personvern.html`, *Authorized domains* `danishk918.github.io`.
+   Ikke last opp logo – det krever full verifisering.
+8. *Audience* → **Publish app**. Da kan alle Google-kontoer logge inn (med varsel om uverifisert app).
 
 **3. Microsoft (Outlook/Hotmail)**
 1. [portal.azure.com](https://portal.azure.com) → *App registrations* → *New registration*.
@@ -80,9 +83,10 @@ Workflowen `pages.yml` publiserer `web/` til `https://danishk918.github.io/Mailm
 Uten oppsett fungerer **«Prøv uten å logge inn»** med eksempeldata.
 
 **Begrensninger å kjenne til**
-- Google: Mens appen står i *Testing*, kan bare inntil 100 testbrukere du har lagt til logge inn. Å åpne for alle krever
-  at Google verifiserer appen, og fordi `gmail.metadata` er et «restricted scope», også en betalt sikkerhetsvurdering (CASA).
-  Til CV og demo holder Testing.
+- Google: Appen er publisert, men ikke verifisert. Alle kan logge inn, men ser først «Google har ikke verifisert denne
+  appen» (trykk *Avansert* → *Gå til …*). Uverifiserte apper er begrenset til 100 Gmail-brukere for hele appens levetid.
+  Å fjerne varselet og grensen krever at Google verifiserer appen, og fordi `gmail.metadata` er et «restricted scope»,
+  også en betalt sikkerhetsvurdering (CASA). Microsoft-innloggingen har ingen slik grense.
 - Ved ett-klikks avmelding kan ikke nettleseren lese svaret fra avsenderen (CORS), så siden vet at forespørselen ble sendt,
   ikke at avsenderen godtok den.
 - Bare de nyeste e-postene leses (`maxMessages`, standard 3000), for å holde seg innenfor Googles fartsgrenser.
