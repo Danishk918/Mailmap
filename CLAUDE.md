@@ -8,3 +8,5 @@
   `https:`/`mailto:`-lenker, og ingen inline-skript (streng CSP).
 - Commit-forfatter: `Danish <200293618+Danishk918@users.noreply.github.com>`. Aldri en ekte e-postadresse.
 - Repoet heter `Danishk918/Mailmap` (stor M). Siden: https://danishk918.github.io/Mailmap/
+- Når skjermbildene i `docs/` tas på nytt, oppdater `?v=`-verdien på bildene i README, så GitHub og mobilappen
+  ikke viser gamle, mellomlagrede bilder.
