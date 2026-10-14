@@ -327,11 +327,12 @@ const stillSending = s => state[s.id] === "done" && verdict(s) === "still";
 const isManual = s => !(s.oneClick || s.mailto);
 // Many senders' own unsubscribe pages ask for the e-mail address. Copy it during the click
 // (clipboard access is only allowed inside a user action) so the user can just paste it.
-function copyEmail(){
-  if (!session.email || session.provider === Demo) return toast("E-posten din blir kopiert her, så du kan lime den inn på siden.");
+function copyEmail(extra = ""){
+  const tail = extra ? " " + extra : "";
+  if (!session.email || session.provider === Demo) return toast("E-posten din blir kopiert her, så du kan lime den inn på siden." + tail);
   navigator.clipboard.writeText(session.email)
-    .then(() => toast(`${session.email} er kopiert. Spør siden etter e-post, lim den inn med Ctrl+V.`))
-    .catch(() => toast("Siden åpnet seg. Spør den etter e-post, skriv inn " + session.email + "."));
+    .then(() => toast(`${session.email} er kopiert. Spør siden etter e-post, lim den inn med Ctrl+V.` + tail))
+    .catch(() => toast("Siden åpnet seg. Spør den etter e-post, skriv inn " + session.email + "." + tail));
 }
 
 function show(v){ ["vStart","vRead","vList"].forEach(x => $(x).hidden = x !== v); $("dock").hidden = true; }
@@ -433,11 +434,11 @@ function subRow(s){
     who.append(el("span", "note " + (e.checked && v !== "quiet" ? "quiet" : v), when + tail));
   }
   const act = el("div","act");
-  const pageLink = (label, cls) => {
+  const pageLink = (label, cls, extra) => {
     const a = el("a", "btn " + cls, label);
     if (href && session.provider !== Demo) { a.href = href; a.target = "_blank"; a.rel = "noopener noreferrer"; }
     else a.href = "#";   // demo: keep it a real, keyboard-reachable link, but go nowhere
-    a.onclick = ev => { if (session.provider === Demo) ev.preventDefault(); copyEmail(); };
+    a.onclick = ev => { if (session.provider === Demo) ev.preventDefault(); copyEmail(extra); };
     return a;
   };
   // One-click unsubscribe links only accept POST (opening them shows an error page), so to let the
@@ -450,7 +451,8 @@ function subRow(s){
       toast("Bruk avmeldingslenken nederst i e-posten for å sjekke eller melde deg av."); };
     return a;
   };
-  const checkBtn = (label, cls) => s.oneClick ? (s.mailLink ? mailBtn(label, cls) : null) : (href ? pageLink(label, cls) : (s.mailLink ? mailBtn(label, cls) : null));
+  const FALLBACK = s.oneClick && s.mailLink ? "Viser siden en feil, åpne Detaljer → «Åpne siste e-post»." : "";
+  const checkBtn = (label, cls) => href ? pageLink(label, cls, FALLBACK) : (s.mailLink ? mailBtn(label, cls) : null);
   if (isDone) {
     act.append(el("span", fresh.has(s.id) ? "state" : "state still", "Sendt")); fresh.delete(s.id);
     const c = !(e && e.checked) && verdict(s) !== "quiet" ? checkBtn("Sjekk hos avsender", "small") : null;
@@ -464,7 +466,7 @@ function subRow(s){
     act.append(el("span","state bad","Feilet"));
     const r = el("button","btn red","Prøv igjen"); r.onclick = () => run([s]); act.append(r);
   } else if (still) {
-    const c = checkBtn(s.oneClick ? "Åpne siste e-post" : "Åpne avmeldingsside", "red"); if (c) act.append(c);
+    const c = checkBtn("Åpne avmeldingsside", "red"); if (c) act.append(c);
     if (s.oneClick || s.mailto) { const r = el("button","btn","Send på nytt"); r.onclick = () => run([s]); act.append(r); }
   } else if (s.oneClick || s.mailto) {
     const b = el("button","btn red","Meld av"); b.onclick = () => run([s]); act.append(b);
@@ -487,7 +489,7 @@ function subRow(s){
   if (e && e.t) row("Sendt", new Date(e.t).toLocaleString("nb-NO"));
   if (s.last) row("Siste e-post", new Date(s.last).toLocaleString("nb-NO"));
   det.append(sum, dl);
-  if (isDone && href && !s.oneClick) det.append(pageLink("Åpne avsenderens side", "small"));
+  if (isDone && href) det.append(pageLink("Åpne avmeldingslenken", "small", FALLBACK));
   if (s.mailLink && session.provider !== Demo) det.append(mailBtn("Åpne siste e-post", "small"));
   const cp = el("button","btn small","Kopier detaljer");
   cp.onclick = async () => {
