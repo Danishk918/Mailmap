@@ -60,9 +60,15 @@ def browser():
 class FakeMail:
     """Fake Gmail + Microsoft Graph + OAuth endpoints. Records what the page sends."""
 
-    def __init__(self, messages, me="me@test.no"):
+    def __init__(self, messages, me="me@test.no", config=None, fail_gets=0):
         self.messages = messages          # list of {"headers": [...], "webLink": str|None}
         self.me = me
+        # fast retries/quota windows so tests don't wait real minutes
+        self.config = {"googleClientId": "test.apps.googleusercontent.com",
+                       "microsoftClientId": "11111111-2222-3333-4444-555555555555",
+                       "maxMessages": 3000, "retryBaseMs": 5, **(config or {})}
+        self.fail_gets = fail_gets        # Gmail answers 403 rateLimitExceeded this many times (-1 = always)
+        self.gets = 0
         self.posted, self.gmail_sent, self.graph_sent, self.auth = [], [], [], []
 
     def route(self, route):
@@ -71,8 +77,7 @@ class FakeMail:
                                                     body=json.dumps(body), headers={"Access-Control-Allow-Origin": "*"})
         if "/config.js" in u:
             return route.fulfill(content_type="application/javascript",
-                                 body='window.MAILMAP_CONFIG={googleClientId:"test.apps.googleusercontent.com",'
-                                      'microsoftClientId:"11111111-2222-3333-4444-555555555555",maxMessages:3000};')
+                                 body="window.MAILMAP_CONFIG=" + json.dumps(self.config) + ";")
         if "accounts.google.com/gsi/client" in u:
             return route.fulfill(content_type="application/javascript", body=(
                 "window.google={accounts:{oauth2:{initTokenClient:o=>({requestAccessToken:()=>"
@@ -114,6 +119,13 @@ class FakeMail:
             if "/messages?" in u:
                 return ok({"messages": [{"id": f"{i:016x}"} for i in range(len(self.messages))]})
             assert "format=metadata" in u, "Mailmap must only ask Gmail for headers"
+            self.gets += 1
+            if self.fail_gets == -1 and self.gets > 12 or self.fail_gets > 0:
+                if self.fail_gets > 0:
+                    self.fail_gets -= 1
+                return route.fulfill(status=403, content_type="application/json", headers={"Access-Control-Allow-Origin": "*"},
+                                     body=json.dumps({"error": {"code": 403, "message": "Quota exceeded for quota metric 'Total Query Cost'",
+                                                                "errors": [{"reason": "rateLimitExceeded"}]}}))
             i = int(u.split("/messages/")[1].split("?")[0], 16)
             return ok({"payload": {"headers": self.messages[i]["headers"]}})
         # Senders' one-click unsubscribe endpoints
@@ -131,10 +143,10 @@ def open_app(browser, base_url):
     """open_app(messages, provider="microsoft"|"google"|None, csp=False, **ctx) -> (page, fake)"""
     contexts = []
 
-    def _open(messages=(), provider="microsoft", csp=False, storage=None, **ctx_opts):
+    def _open(messages=(), provider="microsoft", csp=False, storage=None, config=None, fail_gets=0, wait=True, **ctx_opts):
         ctx = browser.new_context(bypass_csp=not csp, **ctx_opts)
         contexts.append(ctx)
-        fake = FakeMail(list(messages))
+        fake = FakeMail(list(messages), config=config, fail_gets=fail_gets)
         ctx.route("**/*", fake.route)
         page = ctx.new_page()
         page.errors = []
@@ -150,7 +162,7 @@ def open_app(browser, base_url):
             page.click("#gGo")
         elif provider == "demo":
             page.click("#demoBtn")
-        if provider:
+        if provider and wait:
             page.wait_for_selector("#vList:not([hidden])", timeout=15000)
         return page, fake
 

@@ -146,6 +146,8 @@ h2{font:800 clamp(32px,7vw,42px)/1 var(--display);margin:0;text-wrap:balance}
 .who .manual::before{content:"";display:inline-block;width:12px;height:9px;margin-right:7px;vertical-align:0;border:2px solid var(--blue);border-radius:2px;
   background:linear-gradient(to bottom right,transparent 46%,var(--blue) 46% 54%,transparent 54%) ,linear-gradient(to bottom left,transparent 46%,var(--blue) 46% 54%,transparent 54%);background-size:100% 120%;background-repeat:no-repeat}
 .manualnote{margin:8px 0 0;font-size:16px;color:var(--mute)}
+.scannote{margin:14px 0 0;padding:10px 14px;border:2px dashed var(--blue);border-radius:8px;font-size:15px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;max-width:60ch}
+.scannote .btn.quiet{padding:0;min-height:auto}
 .checknote{margin:14px 0 0;padding:12px 14px;border:2px dashed var(--red);border-radius:8px;font-size:15px;color:var(--ink);max-width:60ch}
 .act .btn.small{min-height:36px}
 .who .hint{white-space:normal;margin-top:8px;padding:7px 10px;font-size:14px;font-weight:600;line-height:1.4;color:var(--blue);background:color-mix(in srgb,var(--blue) 9%,transparent);border-left:3px solid var(--blue);border-radius:0 6px 6px 0}
@@ -227,6 +229,7 @@ h2{font:800 clamp(32px,7vw,42px)/1 var(--display);margin:0;text-wrap:balance}
     <h2>Leser innboksen</h2>
     <div class="bar"><i id="bar"></i></div>
     <p class="small" id="readText" role="status">Kobler til …</p>
+    <p class="small" id="readHint" hidden>Google tillater rundt 300 e-poster i minuttet. Mailmap leser nyhetsbrevene først, og lista vises etter et halvt minutt mens resten leses videre.</p>
   </section>
 
   <!-- 3. subscriptions -->
@@ -236,6 +239,7 @@ h2{font:800 clamp(32px,7vw,42px)/1 var(--display);margin:0;text-wrap:balance}
     <h2 id="headline"></h2>
     <p class="manualnote" id="manualNote" hidden></p>
     <p class="checknote" id="checkNote" hidden></p>
+    <div class="scannote" id="scanNote" role="status" hidden><span id="scanText"></span> <button class="btn quiet" id="scanStop">Stopp lesingen</button></div>
     <div class="tabs" id="tabs" role="group" aria-label="Vis">
       <button data-v="sub" aria-pressed="true"></button>
       <button data-v="done" aria-pressed="false"></button>

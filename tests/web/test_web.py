@@ -204,3 +204,35 @@ def test_link_preview_for_sharing(base_url):
     assert tags["og:image"] == "https://danishk918.github.io/Mailmap/og.png"
     assert tags["og:url"] == "https://danishk918.github.io/Mailmap/"
     assert (WEB / "og.png").stat().st_size > 10_000
+
+
+# ------------------------------------------------------------------ Gmail quota
+
+def gmail_inbox(n):
+    return [{"headers": headers(f"Butikk {i:02d} <n@b{i}.no>", "Tilbud", 1, f"<https://b{i}.no/u>", ONE_CLICK)} for i in range(n)]
+
+
+def test_gmail_rate_limit_is_retried(open_app):
+    page, fake = open_app(gmail_inbox(20), "google", fail_gets=3)
+    page.wait_for_function("document.getElementById('scanNote').hidden")
+    assert page.inner_text("#headline") == "Du er abonnert på 20 nyhetsbrev."
+    assert page.errors == []
+
+
+def test_gmail_list_appears_while_still_reading(open_app):
+    # 10 e-mails per 1.5 s window: the list must show early and keep filling.
+    cfg = {"gmailUnitsPerMinute": 20 * 10, "quotaWindowMs": 1500, "firstBatch": 8}
+    page, _ = open_app(gmail_inbox(30), "google", config=cfg)
+    assert page.is_visible("#scanNote") and "Leser fortsatt" in page.inner_text("#scanText")
+    page.wait_for_function("document.getElementById('scanNote').hidden", timeout=20000)
+    assert page.inner_text("#headline") == "Du er abonnert på 30 nyhetsbrev."
+    assert page.errors == []
+
+
+def test_gmail_keeps_partial_results_when_google_refuses(open_app):
+    page, _ = open_app(gmail_inbox(40), "google", fail_gets=-1, config={"firstBatch": 1000})
+    page.wait_for_function("document.getElementById('scanText').textContent.includes('fartsgrensen')", timeout=20000)
+    assert page.is_hidden("#scanStop")
+    assert page.locator("#list > li").count() >= 10      # what was read before Google refused is kept
+    assert page.errors == []
+

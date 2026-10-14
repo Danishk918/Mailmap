@@ -2,7 +2,13 @@
 /* Mailmap web – sign in with Google or Microsoft, find subscriptions, unsubscribe in the page.
    No server: OAuth tokens live in memory only, and only message headers are read. */
 
-const CFG = Object.assign({ googleClientId: "", microsoftClientId: "", maxMessages: 3000 }, window.MAILMAP_CONFIG || {});
+const CFG = Object.assign({
+  googleClientId: "", microsoftClientId: "", maxMessages: 3000,
+  // Gmail allows 6,000 quota units per user per minute; messages.get costs 20, messages.list 5.
+  // That is ~300 e-mails a minute, so Gmail reads fewer messages, paced, and shows the list early.
+  gmailMaxMessages: 1000, gmailUnitsPerMinute: 5400, quotaWindowMs: 60000,
+  firstBatch: 120, retryBaseMs: 1000,
+}, window.MAILMAP_CONFIG || {});
 const HEADERS = ["From", "Subject", "Date", "List-Unsubscribe", "List-Unsubscribe-Post"];
 
 /* ================================================================ analysis */
@@ -93,23 +99,46 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const b64url = bytes => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
 const utf8b64url = s => b64url(new TextEncoder().encode(s));
 
+class RateLimitError extends Error {}
+const RATE_LIMIT_MSG = "Google begrenser hvor mye som kan leses per minutt. Vent et par minutter og prøv igjen.";
 async function api(url, token, opts = {}){
   for (let attempt = 0; ; attempt++) {
     const r = await fetch(url, { ...opts, headers: { Authorization: "Bearer " + token, ...(opts.headers || {}) } });
-    if ((r.status === 429 || r.status >= 500) && attempt < 4) {
-      await sleep((Number(r.headers.get("Retry-After")) || 2 ** attempt) * 1000); continue;
-    }
     if (r.status === 401) throw new Error("Innloggingen har utløpt. Logg inn på nytt.");
-    if (!r.ok) {
-      let msg = ""; try { msg = (await r.json()).error?.message || ""; } catch {}
-      throw new Error(`Kontoen svarte med feil ${r.status}${msg ? ": " + msg : ""}`);
+    if (r.ok) return r.status === 204 || r.status === 202 ? null : r.json().catch(() => null);
+    let err = {}; try { err = (await r.json()).error || {}; } catch {}
+    const reasons = (err.errors || []).map(e => e.reason);
+    const limited = r.status === 429 || (r.status === 403 && (/quota|rate ?limit/i.test(err.message || "") ||
+      reasons.some(x => /rateLimitExceeded|userRateLimitExceeded|quotaExceeded/.test(x))));
+    if ((limited || r.status >= 500) && attempt < 5) {
+      // truncated exponential backoff with jitter, as Google recommends
+      const after = Number(r.headers.get("Retry-After"));
+      await sleep(after ? after * 1000 : Math.min(32000, 2 ** attempt * CFG.retryBaseMs) + Math.random() * CFG.retryBaseMs);
+      continue;
     }
-    return r.status === 204 || r.status === 202 ? null : r.json().catch(() => null);
+    if (limited) throw new RateLimitError(RATE_LIMIT_MSG);
+    throw new Error(`Kontoen svarte med feil ${r.status}${err.message ? ": " + err.message : ""}`);
   }
 }
+// Keeps Gmail calls under the per-user quota, so we slow down instead of being refused.
+const Quota = {
+  log: [],
+  async take(units){
+    for (;;) {
+      const now = Date.now();
+      this.log = this.log.filter(([at]) => now - at < CFG.quotaWindowMs);
+      const used = this.log.reduce((sum, [, u]) => sum + u, 0);
+      if (used + units <= CFG.gmailUnitsPerMinute) { this.log.push([now, units]); return; }
+      await sleep(Math.max(50, this.log[0][0] + CFG.quotaWindowMs - now + 20));
+    }
+  },
+};
 async function pool(items, size, fn){
-  let i = 0;
-  await Promise.all(Array.from({ length: size }, async () => { while (i < items.length) { const k = i++; await fn(items[k], k); } }));
+  let i = 0, failed = null;
+  await Promise.all(Array.from({ length: size }, async () => {
+    while (i < items.length && !failed) { const k = i++; try { await fn(items[k], k); } catch (e) { failed = failed || e; } }
+  }));
+  if (failed) throw failed;
 }
 // The mailto: link comes from the sender, so treat it as hostile: one plain address only,
 // and no line breaks in the subject (they would let a sender inject extra headers such as Bcc).
@@ -145,19 +174,39 @@ const Google = {
     Google.client.requestAccessToken();   // must run directly in the click for the popup
   },
   async who(t){ return (await api("https://gmail.googleapis.com/gmail/v1/users/me/profile", t)).emailAddress; },
-  async scan(t, onMsg, onProgress){
-    const ids = [];
-    let page = "";
+  async listIds(t, label, max){
+    const ids = []; let page = "";
     do {
-      const r = await api(`https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=500${page ? "&pageToken=" + page : ""}`, t);
+      await Quota.take(5);
+      const r = await api("https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=500"
+        + (label ? "&labelIds=" + label : "") + (page ? "&pageToken=" + page : ""), t);
       (r.messages || []).forEach(m => ids.push(m.id));
       page = r.nextPageToken;
-      onProgress(0, ids.length);
-    } while (page && ids.length < CFG.maxMessages);
-    ids.length = Math.min(ids.length, CFG.maxMessages);
+    } while (page && ids.length < max);
+    return ids.slice(0, max);
+  },
+  async scan(t, onMsg, onProgress, shouldStop = () => false){
+    const max = CFG.gmailMaxMessages;
+    // Newsletters live in Gmail's Promotions and Updates categories, so read those first –
+    // with ~300 e-mails a minute, that finds far more senders than the newest mail overall.
+    let ids = [];
+    try {
+      const [promo, upd] = await Promise.all([this.listIds(t, "CATEGORY_PROMOTIONS", max), this.listIds(t, "CATEGORY_UPDATES", max)]);
+      for (let i = 0; i < Math.max(promo.length, upd.length); i++) ids.push(promo[i], upd[i]);
+      ids = [...new Set(ids.filter(Boolean))];
+    } catch (e) { if (e instanceof RateLimitError) throw e; ids = []; }
+    if (ids.length < max) {
+      const rest = await this.listIds(t, "", max);
+      ids = [...new Set([...ids, ...rest])];
+    }
+    ids = ids.slice(0, max);
+    onProgress(0, ids.length);
     const q = HEADERS.map(h => "metadataHeaders=" + encodeURIComponent(h)).join("&");
     let done = 0;
-    await pool(ids, 8, async id => {
+    await pool(ids, 4, async id => {
+      if (shouldStop()) return;
+      await Quota.take(20);
+      if (shouldStop()) return;
       const m = await api(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=metadata&${q}`, t);
       const h = {}; (m.payload?.headers || []).forEach(x => { const k = x.name.toLowerCase(); if (!(k in h)) h[k] = x.value; });
       const link = /^[0-9a-f]{6,32}$/i.test(id)
@@ -206,10 +255,10 @@ const Microsoft = {
     return true;
   },
   async who(t){ const me = await api("https://graph.microsoft.com/v1.0/me?$select=mail,userPrincipalName", t); return me.mail || me.userPrincipalName; },
-  async scan(t, onMsg, onProgress){
+  async scan(t, onMsg, onProgress, shouldStop = () => false){
     let url = "https://graph.microsoft.com/v1.0/me/messages?$select=from,subject,receivedDateTime,internetMessageHeaders,webLink&$orderby=receivedDateTime%20desc&$top=100";
     let done = 0;
-    while (url && done < CFG.maxMessages) {
+    while (url && done < CFG.maxMessages && !shouldStop()) {
       const r = await api(url, t, { headers: { Prefer: 'outlook.body-content-type="text"' } });
       for (const m of r.value || []) {
         const h = {};
@@ -339,35 +388,62 @@ function show(v){ ["vStart","vRead","vList"].forEach(x => $(x).hidden = x !== v)
 function showErr(msg){ show("vStart"); $("signin").hidden = false; $("gWarn").hidden = true; const e = $("startErr"); e.textContent = msg; e.hidden = false; }
 function toast(msg){ const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("on"), Math.max(2600, msg.length * 55)); }
 
+const scan = { running: false, stop: false, done: 0, total: 0, partial: "" };
 async function start(provider, token){
   session.provider = provider; session.token = token;
   $("signin").hidden = false; $("gWarn").hidden = true;
   $("startErr").hidden = true;
   show("vRead"); $("bar").style.width = "0";
+  $("readHint").hidden = provider !== Google;
+  Object.assign(scan, { running: true, stop: false, done: 0, total: 0, partial: "" });
+  let an = null, listShown = false, lastRefresh = 0;
+  const refresh = () => {
+    items = an.result(); lastRefresh = Date.now();
+    if (!listShown) {
+      listShown = true;
+      state = provider === Demo ? (sentLog = {}, {}) : loadDone(); picked = new Set(); view = "sub"; shown = 50; query = ""; $("q").value = "";
+      $("who").textContent = session.email;
+      $("demoNote").hidden = provider !== Demo;
+      show("vList");
+    }
+    render();
+  };
   try {
     session.email = await provider.who(token);
-    const an = new Analyzer(session.email);
+    an = new Analyzer(session.email);
     await provider.scan(token, (h, link) => an.add(h, link), (done, total) => {
+      scan.done = done; scan.total = total;
       $("bar").style.width = total ? (done / total * 100).toFixed(1) + "%" : "4%";
       $("readText").textContent = done ? `${n(done)} av ${n(total)} e-poster lest` : `Fant ${n(total)} e-poster …`;
-    });
-    items = an.result();
-    state = provider === Demo ? (sentLog = {}, {}) : loadDone(); picked = new Set(); view = "sub"; shown = 50; query = ""; $("q").value = "";
-    $("who").textContent = session.email;
-    $("demoNote").hidden = provider !== Demo;
-    show("vList"); render();
+      // Gmail is slow by quota: show what we have after the first batch, then refresh now and then.
+      if (provider === Google && !listShown && done >= CFG.firstBatch && done < total) refresh();
+      else if (listShown && Date.now() - lastRefresh > 6000) refresh();
+    }, () => scan.stop);
   } catch (e) {
-    showErr(e.message || "Noe gikk galt under lesingen. Prøv igjen.");
+    if (e instanceof RateLimitError && an && an.messages > 0) {
+      scan.partial = `Google stoppet lesingen etter ${n(an.messages)} e-poster på grunn av fartsgrensen. Logg inn igjen om noen minutter for å lese flere.`;
+    } else {
+      scan.running = false;
+      return showErr(e.message || "Noe gikk galt under lesingen. Prøv igjen.");
+    }
   }
+  scan.running = false;
+  if (scan.stop && an) scan.partial = `Du stoppet lesingen etter ${n(an.messages)} e-poster.`;
+  refresh();
 }
 
 function render(){
+  $("scanNote").hidden = !scan.running && !scan.partial;
+  $("scanText").textContent = scan.running
+    ? `Leser fortsatt innboksen: ${n(scan.done)} av ${n(scan.total)} e-poster. Lista fylles på underveis.`
+    : scan.partial;
+  $("scanStop").hidden = !scan.running;
   const subs = items.filter(s => s.kind === "sub" && (state[s.id] !== "done" || stillSending(s)));
   const done = items.filter(s => state[s.id] === "done" && !stillSending(s));
   const acc = items.filter(s => s.kind === "acc");
-  $("headline").textContent = subs.length
-    ? `Du er abonnert på ${n(subs.length)} ${subs.length === 1 ? "nyhetsbrev" : "nyhetsbrev"}.`
-    : "Du er ikke abonnert på noe lenger.";
+  $("headline").textContent = scan.running
+    ? `Så langt: ${n(subs.length)} nyhetsbrev funnet.`
+    : subs.length ? `Du er abonnert på ${n(subs.length)} nyhetsbrev.` : "Du er ikke abonnert på noe lenger.";
   const manualCount = subs.filter(s => isManual(s) || stillSending(s)).length;
   $("manualNote").hidden = !manualCount || view !== "sub";
   $("manualNote").textContent = manualCount === 1
@@ -553,6 +629,7 @@ $("mBtn").onclick = () => Microsoft.signIn();
 $("demoBtn").onclick = () => start(Demo, "demo");
 $("tabs").onclick = e => { const b = e.target.closest("button"); if (!b) return; view = b.dataset.v; shown = 50; stay.clear(); render(); };
 $("more").onclick = () => { shown += 50; render(); };
+$("scanStop").onclick = () => { scan.stop = true; $("scanStop").disabled = true; };
 $("q").addEventListener("input", e => { query = e.target.value; shown = 50; render(); });
 $("all").onchange = e => {
   const q = query.trim().toLowerCase();
@@ -563,6 +640,7 @@ $("all").onchange = e => {
 };
 $("bulk").onclick = () => run(items.filter(s => picked.has(s.id) && state[s.id] !== "busy" && (state[s.id] !== "done" || stillSending(s))));
 $("out").onclick = () => {
+  scan.stop = true; scan.running = false; scan.partial = "";
   session.provider?.revoke(session.token);
   Object.assign(session, { provider: null, token: null, email: "" });
   items = []; state = {}; picked.clear();
