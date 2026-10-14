@@ -430,8 +430,11 @@ function subRow(s){
     const when = e.t ? `Sendt ${nb.format(e.t)}${via ? " via " + via : ""}. ` : "";
     const tail = v === "quiet" ? "Ingen nye e-poster siden."
       : e.checked ? "Du har sjekket hos avsenderen."
-      : "Sjekk hos avsenderen at det gikk gjennom. Det kan ta et par dager før e-postene stopper.";
+      : "Det kan ta et par dager før e-postene stopper.";
     who.append(el("span", "note " + (e.checked && v !== "quiet" ? "quiet" : v), when + tail));
+    // Visiting a one-click link in the browser always asks for confirmation – say it up front.
+    if (s.oneClick && v !== "quiet")
+      who.append(el("span", "hint", "Sjekker du hos avsenderen, ber de deg bekrefte. Det er normalt og betyr ikke at det feilet."));
   }
   const act = el("div","act");
   const pageLink = (label, cls, extra) => {
