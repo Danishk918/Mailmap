@@ -131,6 +131,8 @@ h2{font:800 clamp(32px,7vw,42px)/1 var(--display);margin:0;text-wrap:balance}
 .who .manual::before{content:"";display:inline-block;width:12px;height:9px;margin-right:7px;vertical-align:0;border:2px solid var(--blue);border-radius:2px;
   background:linear-gradient(to bottom right,transparent 46%,var(--blue) 46% 54%,transparent 54%) ,linear-gradient(to bottom left,transparent 46%,var(--blue) 46% 54%,transparent 54%);background-size:100% 120%;background-repeat:no-repeat}
 .manualnote{margin:8px 0 0;font-size:16px;color:var(--mute)}
+.checknote{margin:14px 0 0;padding:12px 14px;border:2px dashed var(--red);border-radius:8px;font-size:15px;color:var(--ink);max-width:60ch}
+.act .btn.small{min-height:36px}
 .who .note.quiet{color:var(--ok);font-weight:600}
 .det{flex-basis:100%;margin-left:98px;font-size:14px;color:var(--mute)}
 .det summary{cursor:pointer;width:max-content;font-weight:600;color:var(--mute);padding:4px 0}
@@ -169,8 +171,8 @@ h2{font:800 clamp(32px,7vw,42px)/1 var(--display);margin:0;text-wrap:balance}
   <header class="mast"><span class="logo"><svg viewBox="0 0 32 24" aria-hidden="true"><rect x="1.5" y="1.5" width="29" height="21" rx="2" fill="var(--card)" stroke="var(--ink)" stroke-width="2.5"/><path d="M2 3l14 10L30 3" fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round"/></svg>Mailmap</span><small>Gratis og åpen kildekode</small></header>
   <!-- 1. sign in -->
   <section id="vStart">
-    <h1>Rydd opp i nyhetsbrevene dine</h1>
-    <p class="lede">Logg inn med e&#8209;postkontoen din. Mailmap finner alt du er abonnert på, og du melder deg av med ett trykk.</p>
+    <h1>Alle nyhetsbrevene dine, samlet på ett sted</h1>
+    <p class="lede">Logg inn med e&#8209;postkontoen din. Mailmap samler alt du er abonnert på i én liste. Mange kan du melde deg av direkte herfra. Noen krever at du bekrefter på avsenderens egen side.</p>
     <div class="signin">
       <button class="btn line" id="gBtn">
         <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.7 6c4.5-4.2 6.9-10.3 6.9-17.7z"/><path fill="#FBBC05" d="M10.6 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.7-6c-2.2 1.5-5 2.3-8.2 2.3-6.2 0-11.5-4.1-13.4-9.8l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg>
@@ -203,6 +205,7 @@ h2{font:800 clamp(32px,7vw,42px)/1 var(--display);margin:0;text-wrap:balance}
     <p class="demo" id="demoNote" hidden>Dette er eksempeldata. Ingenting blir sendt når du trykker.</p>
     <h2 id="headline"></h2>
     <p class="manualnote" id="manualNote" hidden></p>
+    <p class="checknote" id="checkNote" hidden></p>
     <div class="tabs" id="tabs" role="group" aria-label="Vis">
       <button data-v="sub" aria-pressed="true"></button>
       <button data-v="done" aria-pressed="false"></button>
@@ -222,7 +225,7 @@ h2{font:800 clamp(32px,7vw,42px)/1 var(--display);margin:0;text-wrap:balance}
 </div>
 <div class="toast" id="toast" role="status"></div>
 
-<script src="config.js?v=e98664f4"></script>
-<script src="app.js?v=e98664f4"></script>
+<script src="config.js?v=ab7367ae"></script>
+<script src="app.js?v=ab7367ae"></script>
 </body>
 </html>

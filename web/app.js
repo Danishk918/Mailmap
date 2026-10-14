@@ -364,6 +364,11 @@ function render(){
   $("manualNote").textContent = manualCount === 1
     ? "1 av dem må gjøres manuelt hos avsenderen. Den er merket i lista."
     : `${manualCount} av dem må gjøres manuelt hos avsenderen. De er merket i lista.`;
+  const unchecked = items.filter(s => state[s.id] === "done" && !stillSending(s) && sentLog[s.id] && !sentLog[s.id].checked && verdict(s) !== "quiet");
+  $("checkNote").hidden = !unchecked.length;
+  $("checkNote").textContent = unchecked.length === 1
+    ? "Du har sendt 1 avmelding. Mailmap kan ikke se om avsenderen godtok den. Sjekk den med «Sjekk hos avsender» i fanen Sendt."
+    : `Du har sendt ${unchecked.length} avmeldinger. Mailmap kan ikke se om hver avsender godtok dem. Sjekk hver enkelt med «Sjekk hos avsender» i fanen Sendt.`;
   const [a, b, c] = $("tabs").children;
   a.textContent = `Abonnert ${subs.length}`; b.textContent = `Sendt ${done.length}`; c.textContent = `Kontoer ${acc.length}`;
   [...$("tabs").children].forEach(x => x.setAttribute("aria-pressed", x.dataset.v === view));
@@ -414,17 +419,26 @@ function subRow(s){
   else if (isDone && e) {
     const v = verdict(s), via = (e.via || []).map(x => VIA[x]).filter(Boolean).join(" og ");
     const when = e.t ? `Sendt ${nb.format(e.t)}${via ? " via " + via : ""}. ` : "";
-    who.append(el("span", "note " + v, when + (v === "quiet" ? "Ingen nye e-poster siden." : v === "wait" ? "Det kan ta et par dager før e-postene stopper." : "")));
+    const tail = v === "quiet" ? "Ingen nye e-poster siden."
+      : e.checked ? "Du har sjekket hos avsenderen."
+      : "Sjekk hos avsenderen at det gikk gjennom. Det kan ta et par dager før e-postene stopper.";
+    who.append(el("span", "note " + (e.checked && v !== "quiet" ? "quiet" : v), when + tail));
   }
   const act = el("div","act");
   const pageLink = (label, cls) => {
     const a = el("a", "btn " + cls, label);
     if (href && session.provider !== Demo) { a.href = href; a.target = "_blank"; a.rel = "noopener noreferrer"; }
+    else a.href = "#";   // demo: keep it a real, keyboard-reachable link, but go nowhere
     a.onclick = ev => { if (session.provider === Demo) ev.preventDefault(); copyEmail(); };
     return a;
   };
   if (isDone) {
     act.append(el("span", fresh.has(s.id) ? "state" : "state still", "Sendt")); fresh.delete(s.id);
+    if (href && !(e && e.checked) && verdict(s) !== "quiet") {
+      const c = pageLink("Sjekk hos avsender", "small"), open = c.onclick;
+      c.onclick = ev => { open(ev); if (e) { e.checked = true; saveDone(); } stay.add(s.id); render(); };
+      act.append(c);
+    }
   } else if (st === "busy") act.append(el("span","state wait","Sender …"));
   else if (st === "fail") {
     act.append(el("span","state bad","Feilet"));
@@ -453,7 +467,7 @@ function subRow(s){
   if (e && e.t) row("Sendt", new Date(e.t).toLocaleString("nb-NO"));
   if (s.last) row("Siste e-post", new Date(s.last).toLocaleString("nb-NO"));
   det.append(sum, dl);
-  if (isDone && href) det.append(pageLink("Sjekk hos avsender", "small"));
+  if (isDone && href) det.append(pageLink("Åpne avsenderens side", "small"));
   const cp = el("button","btn small","Kopier detaljer");
   cp.onclick = async () => {
     const text = [...dl.children].reduce((acc, x, i, arr) => i % 2 ? acc : acc + x.textContent + ": " + arr[i+1].textContent + "\n", s.name + "\n");
@@ -493,7 +507,7 @@ async function run(list){
     saveDone(); render();
   });
   if (manual.length) toast(`${manual.length} avsender${manual.length === 1 ? "" : "e"} krever at du bekrefter på deres side. Trykk «Åpne avmelding» på dem.`);
-  else if (ok && !bad) toast(`Avmelding sendt til ${ok === 1 ? "1 avsender" : ok + " avsendere"}. Åpne Mailmap igjen om et par dager for å se om de har stoppet.`);
+  else if (ok && !bad) toast(`Avmelding sendt til ${ok === 1 ? "1 avsender" : ok + " avsendere"}. Sjekk hver enkelt hos avsenderen for å være sikker.`);
   else if (bad) toast(`${bad} feilet. Trykk «Prøv igjen».`);
 }
 

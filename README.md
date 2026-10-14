@@ -1,7 +1,10 @@
 # mailmap
 
-**Logg inn med Google eller Microsoft, se alt du er abonnert på, og meld deg av med ett trykk.**
-*Sign in with Google or Microsoft, see every newsletter you're subscribed to, and unsubscribe in one click. No server – everything runs in your browser.*
+**Alle nyhetsbrevene dine, samlet på ett sted.** Logg inn med e-postkontoen din, og Mailmap lister opp alt du er
+abonnert på. Mange kan du melde deg av direkte herfra. Noen krever at du bekrefter på avsenderens egen side.
+
+*All your newsletters in one place. Sign in, see everything you're subscribed to, and unsubscribe – directly where the
+sender allows it, on the sender's own page where it doesn't. No server; everything runs in your browser.*
 
 **Prøv den:** [danishk918.github.io/Mailmap](https://danishk918.github.io/Mailmap/) – «Prøv uten å logge inn» viser en demo med eksempeldata.
 
@@ -21,8 +24,10 @@
      egne servere og er den mest robuste veien.
 5. **Avsendere uten automatisk avmelding** er merket «Må gjøres manuelt på avsenderens side». «Åpne avmelding»
    åpner siden deres og kopierer samtidig brukerens e-postadresse, så den kan limes inn der siden spør etter den.
-6. **Etterpå sjekker Mailmap selv om det virket.** Resultatet merkes «Sendt», ikke «Avmeldt», fordi nettleseren ikke
-   får lese avsenderens svar. Mailmap husker når hver avmelding ble sendt (lagret lokalt i nettleseren):
+6. **Hver avmelding bør sjekkes.** Resultatet merkes «Sendt», ikke «Avmeldt», fordi nettleseren ikke får lese
+   avsenderens svar. Mailmap sier dette rett ut etter avmelding, og hver avsender får en knapp
+   **«Sjekk hos avsender»** som åpner deres side. Når du har sjekket, merkes avsenderen «Du har sjekket hos avsenderen».
+   Mailmap husker også når hver avmelding ble sendt (lagret lokalt i nettleseren) og sjekker selv neste gang:
    - Ingen nye e-poster etter avmeldingen: «Ingen nye e-poster siden».
    - Nye e-poster mer enn to dager etter: «Sender fortsatt». Avsenderen legges tilbake øverst i lista, med knapp
      til avsenderens egen avmeldingsside.
