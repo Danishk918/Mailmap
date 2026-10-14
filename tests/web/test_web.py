@@ -260,3 +260,18 @@ def test_remembered_unsubscribes_belong_to_one_address(open_app):
     keys = page.evaluate("Object.keys(localStorage)")
     assert sorted(keys) == ["mailmap-sent:me@test.no"]  # nothing stored without an address
     assert page.errors == []
+
+
+def test_two_tabs_on_the_same_account_do_not_overwrite_each_other(open_app):
+    page1, fake = open_app(basic_inbox())
+    page2 = page1.context.new_page()                    # same browser, same account
+    page2.errors = []
+    page2.goto(page1.url.split("?")[0])
+    page2.click("#mBtn")
+    page2.wait_for_selector("#vList:not([hidden])")
+    row(page1, "Avisa").get_by_role("button", name="Meld av").click()
+    page1.wait_for_function("document.querySelector('#tabs button[data-v=done]').textContent.includes('1')")
+    row(page2, "Butikk").get_by_role("button", name="Meld av").click()   # tab 2 never saw tab 1's unsubscribe
+    page2.wait_for_function("document.querySelector('#tabs button[data-v=done]').textContent.includes('2')")
+    stored = json.loads(page1.evaluate("localStorage.getItem('mailmap-sent:me@test.no')"))
+    assert sorted(stored) == ["avisa.no", "butikk.no"]

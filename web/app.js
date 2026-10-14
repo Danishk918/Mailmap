@@ -366,7 +366,19 @@ const loadDone = () => {
   } catch { sentLog = {}; }
   const st = {}; for (const k of Object.keys(sentLog)) st[k] = "done"; return st;
 };
-const saveDone = () => { if (session.provider === Demo || !session.email) return; try { localStorage.setItem(storeKey(), JSON.stringify(sentLog)); } catch {} };
+// Merge with what is stored, so two tabs on the same account never overwrite each other's unsubscribes.
+const saveDone = () => {
+  if (session.provider === Demo || !session.email) return;
+  try {
+    const stored = JSON.parse(localStorage.getItem(storeKey()) || "{}");
+    for (const [id, e] of Object.entries(stored)) {
+      const mine = sentLog[id];
+      if (!mine || (e.t || 0) > (mine.t || 0)) { sentLog[id] = e; if (state[id] !== "busy") state[id] = "done"; }
+      else if (e.checked && !mine.checked && e.t === mine.t) mine.checked = true;
+    }
+    localStorage.setItem(storeKey(), JSON.stringify(sentLog));
+  } catch {}
+};
 // "still": new mail arrived after the grace period. "wait": too early to tell. "quiet": no new mail since.
 function verdict(s){
   const e = sentLog[s.id]; if (!e || !e.t) return "unknown";

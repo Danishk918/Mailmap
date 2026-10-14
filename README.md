@@ -47,7 +47,7 @@ sender allows it, on the sender's own page where it doesn't. No server; everythi
 
 To sett med tester kjører automatisk på GitHub ved hver endring:
 
-- **Nettsiden** (`tests/web`, 21 tester): siden kjøres i en ekte nettleser (Chromium) mot falske Google- og
+- **Nettsiden** (`tests/web`, 22 tester): siden kjøres i en ekte nettleser (Chromium) mot falske Google- og
   Microsoft-tjenester, så det trengs ingen kontoer eller nett. Dekker innlogging (PKCE og Google), lesing kun av headere,
   avmelding (RFC 8058 `POST` og e-post), «Velg alle» og søk med 60 avsendere, Googles fartsgrense (ny forsøk, tidlig liste, delvise resultater), oppfølging («Sender fortsatt»),
   og sikkerhet: XSS i avsendernavn og emne, `javascript:`-lenker, header-injeksjon i `mailto:`, forfalskede
@@ -73,7 +73,8 @@ pytest -q
   et halvt minutt og fyller på underveis. Nås grensen likevel, prøver Mailmap igjen med økende ventetid
   (exponential backoff), og stopper Google lesingen helt, vises det som rakk å bli lest.
 - «Sendt»-status og datoer lagres bare i nettleseren der avmeldingen ble gjort, og bare under e-postadressen som
-  var logget inn. En annen enhet vet ikke om dem, og en annen konto i samme nettleser ser dem aldri.
+  var logget inn. En annen enhet vet ikke om dem, og en annen konto i samme nettleser ser dem aldri. Flere faner med samme
+  konto slår sammen avmeldingene i stedet for å overskrive hverandre.
 - Åpner du en ett-klikks-lenke i nettleseren, kan avsenderen be deg bekrefte (pause, skriv e-post, bekreft). Det er
   med vilje: bare `POST`-en Mailmap sender melder av direkte, så lenkeskannere ikke melder folk av ved uhell. Noen
   slike lenker tar bare imot `POST` og viser en feilside; da finnes «Åpne siste e-post» under *Detaljer*.
