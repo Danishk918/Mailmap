@@ -414,7 +414,7 @@ function subRow(s){
   else if (isDone && e) {
     const v = verdict(s), via = (e.via || []).map(x => VIA[x]).filter(Boolean).join(" og ");
     const when = e.t ? `Sendt ${nb.format(e.t)}${via ? " via " + via : ""}. ` : "";
-    who.append(el("span", "note " + v, when + (v === "quiet" ? "Ingen nye e-poster siden." : v === "wait" ? "Avsenderen har to dager på seg." : "")));
+    who.append(el("span", "note " + v, when + (v === "quiet" ? "Ingen nye e-poster siden." : v === "wait" ? "Det kan ta et par dager før e-postene stopper." : "")));
   }
   const act = el("div","act");
   const pageLink = (label, cls) => {
