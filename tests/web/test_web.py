@@ -312,3 +312,10 @@ def test_google_sign_in_rejects_a_forged_return(open_app, base_url):
     page.goto(base_url + "#access_token=STOLEN&state=guess&scope=gmail.metadata")   # not started by this tab
     assert "kunne ikke bekreftes" in page.inner_text("#startErr")
     assert fake.auth == [] and "STOLEN" not in page.url
+
+
+def test_registered_redirect_address_is_used_exactly(open_app, base_url):
+    page, fake = open_app(basic_inbox(), "google", config={"redirectUri": base_url})
+    assert fake.google_auth[0]["redirect_uri"] == [base_url]
+    other, fake2 = open_app(basic_inbox(), "google", config={"redirectUri": "https://elsewhere.example/Mailmap/"})
+    assert fake2.google_auth[0]["redirect_uri"] == [base_url]   # another site's address is never used here

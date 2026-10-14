@@ -232,7 +232,10 @@ const Microsoft = {
   scope: "openid offline_access User.Read Mail.Read Mail.Send",
   auth: "https://login.microsoftonline.com/common/oauth2/v2.0",
   // Same URI whether the page was opened as /mailmap/ or /mailmap/index.html – it must match the app registration.
-  redirect: () => location.origin + location.pathname.replace(/index\.html$/, ""),
+  // The registered address must match exactly, so use it whenever the page runs on that site (even if opened
+  // as /mailmap/ or /Mailmap/index.html); elsewhere (local testing) use the page's own address.
+  redirect: () => CFG.redirectUri && CFG.redirectUri.startsWith(location.origin + "/") ? CFG.redirectUri
+    : location.origin + location.pathname.replace(/index\.html$/, ""),
   async signIn(){
     if (!CFG.microsoftClientId) return showErr("Microsoft-innlogging er ikke satt opp ennå. Legg inn microsoftClientId i config.js (se README).");
     const verifier = b64url(crypto.getRandomValues(new Uint8Array(32)));

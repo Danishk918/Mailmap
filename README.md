@@ -36,7 +36,7 @@ sender allows it, on the sender's own page where it doesn't. No server; everythi
 | Ingen server | OAuth skjer direkte mellom nettleseren og Google/Microsoft. Tokenet ligger kun i minnet og forsvinner når fanen lukkes. |
 | Minste nødvendige tilgang | Google: `gmail.metadata` (kan ikke lese innhold) + `gmail.send`. Microsoft: `Mail.Read` + `Mail.Send`. |
 | PKCE uten hemmelighet | Microsoft-innloggingen bruker Authorization Code + PKCE med `state`-sjekk. Koden fjernes fra adresselinjen med en gang. |
-| Innlogging i samme fane | Google-innloggingen går til Google og tilbake i samme fane, også på iPhone, der Safari bryter innloggingsvinduer. Mailmap sjekker `state` (en falsk retur avvises), og tokenet fjernes fra adresselinjen med en gang. |
+| Innlogging i samme fane | Google-innloggingen går til Google og tilbake i samme fane, også på iPhone, der Safari bryter innloggingsvinduer. Mailmap sjekker `state` (en falsk retur avvises), og tokenet fjernes fra adresselinjen med en gang. Tilbakeadressen er låst i `config.js`, så den alltid stemmer med den som er registrert hos Google og Microsoft. |
 | All e-post er fiendtlig input | Avsendernavn og emner vises kun via `textContent`. Lenker godtas kun med `https:` og `mailto:`. |
 | Header-injeksjon blokkert | `mailto:`-lenker valideres (én adresse) og linjeskift fjernes fra emnet, så en avsender ikke kan smugle inn `Bcc`. |
 | Forfalskning blokkert | Avsenderadressen tolkes før visningsnavnet dekodes, så et kodet navn (`=?utf-8?…?=`) ikke kan endre adressen. |
