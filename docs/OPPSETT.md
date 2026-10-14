@@ -30,7 +30,7 @@ Workflowen `pages.yml` publiserer `web/` til `https://danishk918.github.io/Mailm
 4. *API permissions* → *Microsoft Graph* → *Delegated* → `Mail.Read`, `Mail.Send` (`User.Read` er der fra før).
 5. Kopier *Application (client) ID* inn i `web/config.js` → `microsoftClientId`.
 
-**Test lokalt:** `cd web && python3 -m http.server 8000` → åpne `http://localhost:8000/`.
+**Test lokalt:** `python3 scripts/build_web.py && cd web && python3 -m http.server 8000` → åpne `http://localhost:8000/`.
 Uten oppsett fungerer **«Prøv uten å logge inn»** med eksempeldata.
 
 Begrensninger ved Google- og Microsoft-innloggingen står i [README](../README.md#begrensninger).

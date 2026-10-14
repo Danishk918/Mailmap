@@ -6,3 +6,6 @@ __pycache__/
 mailmap*.json
 mailmap*.html
 *.mbox
+
+# Built from web/app.html by scripts/build_web.py (CI builds it on every deploy)
+web/index.html
