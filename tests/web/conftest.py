@@ -69,7 +69,7 @@ class FakeMail:
                        "maxMessages": 3000, "retryBaseMs": 5, **(config or {})}
         self.fail_gets = fail_gets        # Gmail answers 403 rateLimitExceeded this many times (-1 = always)
         self.gets = 0
-        self.posted, self.gmail_sent, self.graph_sent, self.auth = [], [], [], []
+        self.posted, self.gmail_sent, self.graph_sent, self.auth, self.stats = [], [], [], [], []
 
     def route(self, route):
         u, r = route.request.url, route.request
@@ -84,6 +84,9 @@ class FakeMail:
                 "setTimeout(()=>o.callback({access_token:'G-TOKEN'}),5)}),revoke:()=>{}}}};"))
         if "fonts.googleapis.com" in u or "fonts.gstatic.com" in u:
             return route.abort()
+        if "stats.test/count" in u:       # the visit counter (GoatCounter in production)
+            self.stats.append(r)
+            return route.fulfill(content_type="image/gif", body=b"GIF89a")
         # Microsoft OAuth (PKCE)
         if "login.microsoftonline.com" in u and "/authorize" in u:
             q = urllib.parse.parse_qs(urllib.parse.urlparse(u).query)

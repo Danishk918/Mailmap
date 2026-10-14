@@ -41,17 +41,18 @@ sender allows it, on the sender's own page where it doesn't. No server; everythi
 | Forfalskning blokkert | Avsenderadressen tolkes før visningsnavnet dekodes, så et kodet navn (`=?utf-8?…?=`) ikke kan endre adressen. |
 | Streng CSP | Kun egne skript + Googles innloggingsskript. Ingen `eval`, ingen inline-skript. |
 | Bare kjente e-postlenker | «Åpne siste e-post» godtar bare lenker til Gmail (bygget av Mailmap) og Outlooks egne domener, aldri en lenke fra avsenderen. |
+| Anonym telling, uten fremmed kode | Besøk og bruk telles med [GoatCounter](https://www.goatcounter.com/) uten informasjonskapsler. Mailmap sender tellingen selv i stedet for å laste GoatCounters skript, så CSP-en er like streng. Bare faste navn sendes (`/`, `demo`, `login-google`, `login-microsoft`, `unsubscribe`), aldri e-postdata. En test sjekker dette. |
 | Ingen kontoenumerering | Verktøyet sjekker aldri nettsider for om e-posten er registrert. Det ser bare på e-post brukeren har mottatt. |
 
 ## Tester
 
 To sett med tester kjører automatisk på GitHub ved hver endring:
 
-- **Nettsiden** (`tests/web`, 22 tester): siden kjøres i en ekte nettleser (Chromium) mot falske Google- og
+- **Nettsiden** (`tests/web`, 23 tester): siden kjøres i en ekte nettleser (Chromium) mot falske Google- og
   Microsoft-tjenester, så det trengs ingen kontoer eller nett. Dekker innlogging (PKCE og Google), lesing kun av headere,
   avmelding (RFC 8058 `POST` og e-post), «Velg alle» og søk med 60 avsendere, Googles fartsgrense (ny forsøk, tidlig liste, delvise resultater), oppfølging («Sender fortsatt»),
   og sikkerhet: XSS i avsendernavn og emne, `javascript:`-lenker, header-injeksjon i `mailto:`, forfalskede
-  avsendernavn, at bare Outlook/Gmail-lenker godtas, og at den strenge CSP-en ikke blokkerer noe siden trenger.
+  avsendernavn, at bare Outlook/Gmail-lenker godtas, at den strenge CSP-en ikke blokkerer noe siden trenger, og at besøkstellingen aldri får med e-postadresser, avsendere eller innloggingskoder.
 - **[Kommandolinjeversjonen](docs/KOMMANDOLINJE.md)** (`tests/test_mailmap.py`, 18 tester), på Python 3.10, 3.12 og 3.13.
 
 ```bash
@@ -86,6 +87,7 @@ pytest -q
 - **Ingen rammeverk og ingen byggesteg:** ren HTML, CSS og JavaScript i `web/`, publisert med GitHub Pages.
 - **Innlogging:** Google Identity Services og Microsoft (OAuth 2.0 Authorization Code + PKCE), direkte fra nettleseren.
 - **API-er:** Gmail API (kun `format=metadata`) og Microsoft Graph (`internetMessageHeaders`).
+- **Statistikk:** anonym telling til GoatCounter via `stats` i `config.js` (fjern linjen for å slå av, f.eks. i en fork).
 - **Deling:** Open Graph-tagger og eget delingsbilde (`web/og.png`), så lenken vises som et kort på LinkedIn.
 
 ```

@@ -8,6 +8,7 @@ const CFG = Object.assign({
   // That is ~300 e-mails a minute, so Gmail reads fewer messages, paced, and shows the list early.
   gmailMaxMessages: 1000, gmailUnitsPerMinute: 5400, quotaWindowMs: 60000,
   firstBatch: 120, retryBaseMs: 1000,
+  stats: "",               // GoatCounter count URL; empty = no counting
 }, window.MAILMAP_CONFIG || {});
 const HEADERS = ["From", "Subject", "Date", "List-Unsubscribe", "List-Unsubscribe-Post"];
 
@@ -404,6 +405,7 @@ function toast(msg){ const t = $("toast"); t.textContent = msg; t.classList.add(
 const scan = { running: false, stop: false, done: 0, total: 0, partial: "" };
 async function start(provider, token){
   session.provider = provider; session.token = token;
+  track(provider === Google ? "login-google" : provider === Microsoft ? "login-microsoft" : "demo");
   $("signin").hidden = false; $("gWarn").hidden = true;
   $("startErr").hidden = true;
   show("vRead"); $("bar").style.width = "0";
@@ -624,9 +626,23 @@ async function run(list){
     } catch (e) { state[s.id] = "fail"; bad++; if (/utløpt/.test(e.message)) toast(e.message); }
     saveDone(); render();
   });
+  if (ok) track("unsubscribe");
   if (manual.length) toast(`${manual.length} avsender${manual.length === 1 ? "" : "e"} krever at du bekrefter på deres side. Trykk «Åpne avmelding» på dem.`);
   else if (ok && !bad) toast(`Avmelding sendt til ${ok === 1 ? "1 avsender" : ok + " avsendere"}. Sjekk hver enkelt hos avsenderen for å være sikker.`);
   else if (bad) toast(`${bad} feilet. Trykk «Prøv igjen».`);
+}
+
+/* ================================================================ analytics */
+// Anonymous counts sent straight to GoatCounter: no third-party script, no cookies.
+// Only these fixed names are ever sent – never an e-mail address, sender, token or the page URL.
+const EVENTS = new Set(["/", "demo", "login-google", "login-microsoft", "unsubscribe"]);
+function track(name){
+  if (!CFG.stats || !EVENTS.has(name)) return;
+  let ref = "";
+  try { const r = new URL(document.referrer); if (r.origin !== location.origin && !/microsoftonline|google/.test(r.hostname)) ref = r.origin; } catch {}
+  const p = new URLSearchParams({ p: name, t: name === "/" ? "Mailmap" : name, e: String(name !== "/"), r: ref,
+    s: `${screen.width},${screen.height},${devicePixelRatio || 1}`, rnd: Math.random().toString(36).slice(2) });
+  fetch(`${CFG.stats}?${p}`, { mode: "no-cors", credentials: "omit", referrerPolicy: "no-referrer", keepalive: true }).catch(() => {});
 }
 
 /* ================================================================ events */
@@ -661,4 +677,5 @@ $("out").onclick = () => {
 };
 
 Google.load();
+if (!/[?&](code|error)=/.test(location.search)) track("/");   // a return from Microsoft login is not a new visit
 Microsoft.handleRedirect().catch(e => showErr(e.message));

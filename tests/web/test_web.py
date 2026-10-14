@@ -275,3 +275,22 @@ def test_two_tabs_on_the_same_account_do_not_overwrite_each_other(open_app):
     page2.wait_for_function("document.querySelector('#tabs button[data-v=done]').textContent.includes('2')")
     stored = json.loads(page1.evaluate("localStorage.getItem('mailmap-sent:me@test.no')"))
     assert sorted(stored) == ["avisa.no", "butikk.no"]
+
+
+def test_visit_counter_sends_only_fixed_names(open_app):
+    stats = {"stats": "https://stats.test/count"}
+    page, fake = open_app(basic_inbox(), config=stats, csp=True)   # also proves the CSP allows the counter
+    row(page, "Avisa").get_by_role("button", name="Meld av").click()
+    page.locator("#tabs button[data-v=done]", has_text="Sendt 1").wait_for()   # CSP is on: no wait_for_function
+    page.wait_for_timeout(200)
+    from urllib.parse import parse_qs, urlparse
+    sent = [parse_qs(urlparse(r.url).query) for r in fake.stats]
+    assert [q["p"][0] for q in sent] == ["/", "login-microsoft", "unsubscribe"]   # the Microsoft return is not a 2nd visit
+    for r in fake.stats:
+        assert "@" not in r.url and "C0DE" not in r.url and "code=" not in r.url
+        assert "avisa" not in r.url.lower() and "M-TOKEN" not in r.url
+        assert "cookie" not in r.headers and "referer" not in r.headers
+    assert page.errors == []
+
+    demo, fake2 = open_app(provider="demo")             # no stats URL configured: nothing is counted
+    assert fake2.stats == []
