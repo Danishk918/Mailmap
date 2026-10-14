@@ -355,7 +355,8 @@ const fresh = new Set();   // rows that should play the postmark animation once
 const stay = new Set();    // stamped rows kept in the "Abonnert" list until the tab changes
 let sentLog = {};          // id -> { t: when unsubscribe was sent, via: ["post","mail"] | ["page"] }
 const GRACE = 2 * 864e5;  // senders get two days to process an unsubscribe
-const storeKey = () => "mailmap-sent:" + session.email;
+// Everything Mailmap remembers is stored under the signed-in address and only shown to that address.
+const storeKey = () => "mailmap-sent:" + session.email.trim().toLowerCase();
 const loadDone = () => {
   try {
     sentLog = JSON.parse(localStorage.getItem(storeKey()) || "{}");
@@ -365,7 +366,7 @@ const loadDone = () => {
   } catch { sentLog = {}; }
   const st = {}; for (const k of Object.keys(sentLog)) st[k] = "done"; return st;
 };
-const saveDone = () => { if (session.provider === Demo) return; try { localStorage.setItem(storeKey(), JSON.stringify(sentLog)); } catch {} };
+const saveDone = () => { if (session.provider === Demo || !session.email) return; try { localStorage.setItem(storeKey(), JSON.stringify(sentLog)); } catch {} };
 // "still": new mail arrived after the grace period. "wait": too early to tell. "quiet": no new mail since.
 function verdict(s){
   const e = sentLog[s.id]; if (!e || !e.t) return "unknown";
@@ -643,7 +644,7 @@ $("out").onclick = () => {
   scan.stop = true; scan.running = false; scan.partial = "";
   session.provider?.revoke(session.token);
   Object.assign(session, { provider: null, token: null, email: "" });
-  items = []; state = {}; picked.clear();
+  items = []; state = {}; sentLog = {}; picked.clear(); fresh.clear(); stay.clear();
   show("vStart");
 };
 

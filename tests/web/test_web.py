@@ -236,3 +236,27 @@ def test_gmail_keeps_partial_results_when_google_refuses(open_app):
     assert page.locator("#list > li").count() >= 10      # what was read before Google refused is kept
     assert page.errors == []
 
+
+
+def test_remembered_unsubscribes_belong_to_one_address(open_app):
+    """Two people in the same browser: each only ever sees their own unsubscribes."""
+    page, fake = open_app(basic_inbox())
+    row(page, "Avisa").get_by_role("button", name="Meld av").click()
+    page.wait_for_function("document.querySelector('#tabs button[data-v=done]').textContent.includes('1')")
+
+    page.click("#out")
+    fake.me = "someone.else@test.no"
+    page.click("#mBtn")
+    page.wait_for_selector("#vList:not([hidden])")
+    assert page.inner_text("#who") == "someone.else@test.no"
+    assert page.inner_text("#tabs button[data-v=done]") == "Sendt 0"
+    assert row(page, "Avisa").get_by_role("button", name="Meld av").is_visible()
+
+    page.click("#out")
+    fake.me = "ME@test.no"                              # same address, different casing
+    page.click("#mBtn")
+    page.wait_for_selector("#vList:not([hidden])")
+    assert page.inner_text("#tabs button[data-v=done]") == "Sendt 1"
+    keys = page.evaluate("Object.keys(localStorage)")
+    assert sorted(keys) == ["mailmap-sent:me@test.no"]  # nothing stored without an address
+    assert page.errors == []
