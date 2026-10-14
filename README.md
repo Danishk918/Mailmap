@@ -30,7 +30,10 @@ sender allows it, on the sender's own page where it doesn't. No server; everythi
    åpner siden deres og kopierer samtidig brukerens e-postadresse, så den kan limes inn der siden spør etter den.
 6. **Hver avmelding bør sjekkes.** Resultatet merkes «Sendt», ikke «Avmeldt», fordi nettleseren ikke får lese
    avsenderens svar. Mailmap sier dette rett ut etter avmelding, og hver avsender får en knapp
-   **«Sjekk hos avsender»** som åpner deres side. Når du har sjekket, merkes avsenderen «Du har sjekket hos avsenderen».
+   **«Sjekk hos avsender»**. For ett-klikks-avsendere åpner den den siste e-posten fra avsenderen i Gmail eller Outlook,
+   der den vanlige avmeldingslenken nederst virker (ett-klikks-adressen tar bare imot `POST` og kan ikke åpnes som side).
+   For andre åpnes avsenderens egen side. Når du har sjekket, merkes avsenderen «Du har sjekket hos avsenderen».
+   Lenker til e-post godtas bare til `mail.google.com` (bygget av Mailmap) og Outlooks egne domener.
    Mailmap husker også når hver avmelding ble sendt (lagret lokalt i nettleseren) og sjekker selv neste gang:
    - Ingen nye e-poster etter avmeldingen: «Ingen nye e-poster siden».
    - Nye e-poster mer enn to dager etter: «Sender fortsatt». Avsenderen legges tilbake øverst i lista, med knapp

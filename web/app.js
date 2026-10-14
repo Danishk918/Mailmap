@@ -49,19 +49,20 @@ function unsubLinks(v){
 
 class Analyzer {
   constructor(own){ this.s = new Map(); this.own = (own || "").toLowerCase(); this.messages = 0; }
-  add(h){ // h: lower-case header name -> value
+  add(h, link){ // h: lower-case header name -> value; link: provider's web link to this e-mail (trusted, built by us)
     this.messages++;
     const { addr, name } = parseFrom(h.from);
     if (!addr.includes("@") || addr === this.own) return;
     const domain = baseDomain(addr.split("@").pop()); if (!domain) return;
     let s = this.s.get(domain);
     if (!s) this.s.set(domain, s = { domain, names:new Map(), addr, count:0, last:null, https:null, mailto:null, oneClick:false, acc:0,
-      unsubAt:null, rawUnsub:"", rawPost:"" });
+      unsubAt:null, rawUnsub:"", rawPost:"", mailLink:null, latestLink:null, latestAt:null });
     s.count++;
     if (name && !name.includes("@")) s.names.set(name, (s.names.get(name)||0)+1);
     if (ACCOUNT_RE.test(decodeWords(h.subject || ""))) s.acc++;
     const t = Date.parse(h.date || ""), when = isNaN(t) ? null : t;
     if (when != null) s.last = s.last == null ? when : Math.max(s.last, when);
+    if (link && (s.latestAt == null || (when != null && when >= s.latestAt))) { s.latestAt = when ?? 0; s.latestLink = link; }
     const u = unsubLinks(h["list-unsubscribe"]);
     // Tokens expire, so use the newest message that actually HAS an unsubscribe header
     // (the newest message overall may be a receipt without one).
@@ -72,6 +73,7 @@ class Analyzer {
       s.oneClick = !!s.https && /list-unsubscribe=one-click/i.test(h["list-unsubscribe-post"] || "");
       s.rawUnsub = (h["list-unsubscribe"] || "").slice(0, 2000);
       s.rawPost = (h["list-unsubscribe-post"] || "").slice(0, 200);
+      if (link) s.mailLink = link;
     }
   }
   result(){
@@ -80,6 +82,7 @@ class Analyzer {
       name: [...s.names].sort((a,b) => b[1]-a[1])[0]?.[0] || s.domain,
       domain: s.domain, count: s.count, last: s.last,
       https: s.https, mailto: s.mailto, oneClick: s.oneClick, rawUnsub: s.rawUnsub, rawPost: s.rawPost,
+      mailLink: s.mailLink || s.latestLink,
       kind: (s.https || s.mailto) ? "sub" : s.acc ? "acc" : "other",
     })).sort((a,b) => b.count - a.count);
   }
@@ -157,7 +160,9 @@ const Google = {
     await pool(ids, 8, async id => {
       const m = await api(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=metadata&${q}`, t);
       const h = {}; (m.payload?.headers || []).forEach(x => { const k = x.name.toLowerCase(); if (!(k in h)) h[k] = x.value; });
-      onMsg(h); onProgress(++done, ids.length);
+      const link = /^[0-9a-f]{6,32}$/i.test(id)
+        ? `https://mail.google.com/mail/?authuser=${encodeURIComponent(session.email)}#all/${id}` : null;
+      onMsg(h, link); onProgress(++done, ids.length);
     });
   },
   async send(t, to, subject, body){
@@ -202,7 +207,7 @@ const Microsoft = {
   },
   async who(t){ const me = await api("https://graph.microsoft.com/v1.0/me?$select=mail,userPrincipalName", t); return me.mail || me.userPrincipalName; },
   async scan(t, onMsg, onProgress){
-    let url = "https://graph.microsoft.com/v1.0/me/messages?$select=from,subject,receivedDateTime,internetMessageHeaders&$orderby=receivedDateTime%20desc&$top=100";
+    let url = "https://graph.microsoft.com/v1.0/me/messages?$select=from,subject,receivedDateTime,internetMessageHeaders,webLink&$orderby=receivedDateTime%20desc&$top=100";
     let done = 0;
     while (url && done < CFG.maxMessages) {
       const r = await api(url, t, { headers: { Prefer: 'outlook.body-content-type="text"' } });
@@ -213,7 +218,7 @@ const Microsoft = {
         if (!h.from && f) h.from = `${f.name || ""} <${f.address}>`;
         h.subject = h.subject || m.subject || "";
         h.date = h.date || m.receivedDateTime;
-        onMsg(h); onProgress(++done, Math.max(done, CFG.maxMessages));
+        onMsg(h, safeMailLink(m.webLink)); onProgress(++done, Math.max(done, CFG.maxMessages));
         if (done >= CFG.maxMessages) break;
       }
       url = r["@odata.nextLink"];
@@ -246,7 +251,7 @@ const Demo = {
       if (kind === 1) { h["list-unsubscribe"] = `<https://${dom}/u>`; h["list-unsubscribe-post"] = "List-Unsubscribe=One-Click"; }
       if (kind === 2) h["list-unsubscribe"] = `<mailto:stop@${dom}>`;
       if (kind === 3) h["list-unsubscribe"] = `<https://${dom}/innstillinger>`;
-      onMsg(h); onProgress(++done, total);
+      onMsg(h, "demo"); onProgress(++done, total);
       if (done % 40 === 0) await sleep(30);
     }
   },
@@ -292,6 +297,8 @@ const el = (t, c, txt) => { const e = document.createElement(t); if (c) e.classN
 const nb = new Intl.DateTimeFormat("nb-NO", { day:"numeric", month:"short", year:"numeric" });
 const n = x => x.toLocaleString("nb-NO");
 const safeHttps = u => { try { return new URL(u).protocol === "https:" ? u : null; } catch { return null; } };
+const MAIL_HOSTS = new Set(["outlook.live.com", "outlook.office.com", "outlook.office365.com"]);
+const safeMailLink = u => { try { const x = new URL(u); return x.protocol === "https:" && MAIL_HOSTS.has(x.hostname) ? u : null; } catch { return null; } };
 
 const session = { provider: null, token: null, email: "" };
 let items = [], state = {}, picked = new Set(), view = "sub", shown = 50, query = "";
@@ -339,7 +346,7 @@ async function start(provider, token){
   try {
     session.email = await provider.who(token);
     const an = new Analyzer(session.email);
-    await provider.scan(token, h => an.add(h), (done, total) => {
+    await provider.scan(token, (h, link) => an.add(h, link), (done, total) => {
       $("bar").style.width = total ? (done / total * 100).toFixed(1) + "%" : "4%";
       $("readText").textContent = done ? `${n(done)} av ${n(total)} e-poster lest` : `Fant ${n(total)} e-poster …`;
     });
@@ -368,8 +375,8 @@ function render(){
   const unchecked = items.filter(s => state[s.id] === "done" && !stillSending(s) && sentLog[s.id] && !sentLog[s.id].checked && verdict(s) !== "quiet");
   $("checkNote").hidden = !unchecked.length;
   $("checkNote").textContent = unchecked.length === 1
-    ? "Du har sendt 1 avmelding. Mailmap kan ikke se om avsenderen godtok den. Sjekk den med «Sjekk hos avsender» i fanen Sendt."
-    : `Du har sendt ${unchecked.length} avmeldinger. Mailmap kan ikke se om hver avsender godtok dem. Sjekk hver enkelt med «Sjekk hos avsender» i fanen Sendt.`;
+    ? "Du har sendt 1 avmelding. Mailmap kan ikke se om avsenderen godtok den. Sjekk den med «Sjekk hos avsender», som åpner avsenderens side eller den siste e-posten fra dem."
+    : `Du har sendt ${unchecked.length} avmeldinger. Mailmap kan ikke se om hver avsender godtok dem. Sjekk hver enkelt med «Sjekk hos avsender», som åpner avsenderens side eller den siste e-posten fra dem.`;
   const [a, b, c] = $("tabs").children;
   a.textContent = `Abonnert ${subs.length}`; b.textContent = `Sendt ${done.length}`; c.textContent = `Kontoer ${acc.length}`;
   [...$("tabs").children].forEach(x => x.setAttribute("aria-pressed", x.dataset.v === view));
@@ -433,10 +440,22 @@ function subRow(s){
     a.onclick = ev => { if (session.provider === Demo) ev.preventDefault(); copyEmail(); };
     return a;
   };
+  // One-click unsubscribe links only accept POST (opening them shows an error page), so to let the
+  // user check, open the newest e-mail from the sender, where the normal footer link works.
+  const mailBtn = (label, cls) => {
+    const a = el("a", "btn " + cls, label);
+    if (s.mailLink && session.provider !== Demo) { a.href = s.mailLink; a.target = "_blank"; a.rel = "noopener noreferrer"; }
+    else a.href = "#";
+    a.onclick = ev => { if (session.provider === Demo) ev.preventDefault();
+      toast("Bruk avmeldingslenken nederst i e-posten for å sjekke eller melde deg av."); };
+    return a;
+  };
+  const checkBtn = (label, cls) => s.oneClick ? (s.mailLink ? mailBtn(label, cls) : null) : (href ? pageLink(label, cls) : (s.mailLink ? mailBtn(label, cls) : null));
   if (isDone) {
     act.append(el("span", fresh.has(s.id) ? "state" : "state still", "Sendt")); fresh.delete(s.id);
-    if (href && !(e && e.checked) && verdict(s) !== "quiet") {
-      const c = pageLink("Sjekk hos avsender", "small"), open = c.onclick;
+    const c = !(e && e.checked) && verdict(s) !== "quiet" ? checkBtn("Sjekk hos avsender", "small") : null;
+    if (c) {
+      const open = c.onclick;
       c.onclick = ev => { open(ev); if (e) { e.checked = true; saveDone(); } stay.add(s.id); render(); };
       act.append(c);
     }
@@ -445,7 +464,7 @@ function subRow(s){
     act.append(el("span","state bad","Feilet"));
     const r = el("button","btn red","Prøv igjen"); r.onclick = () => run([s]); act.append(r);
   } else if (still) {
-    if (href) act.append(pageLink("Åpne avmeldingsside", "red"));
+    const c = checkBtn(s.oneClick ? "Åpne siste e-post" : "Åpne avmeldingsside", "red"); if (c) act.append(c);
     if (s.oneClick || s.mailto) { const r = el("button","btn","Send på nytt"); r.onclick = () => run([s]); act.append(r); }
   } else if (s.oneClick || s.mailto) {
     const b = el("button","btn red","Meld av"); b.onclick = () => run([s]); act.append(b);
@@ -468,7 +487,8 @@ function subRow(s){
   if (e && e.t) row("Sendt", new Date(e.t).toLocaleString("nb-NO"));
   if (s.last) row("Siste e-post", new Date(s.last).toLocaleString("nb-NO"));
   det.append(sum, dl);
-  if (isDone && href) det.append(pageLink("Åpne avsenderens side", "small"));
+  if (isDone && href && !s.oneClick) det.append(pageLink("Åpne avsenderens side", "small"));
+  if (s.mailLink && session.provider !== Demo) det.append(mailBtn("Åpne siste e-post", "small"));
   const cp = el("button","btn small","Kopier detaljer");
   cp.onclick = async () => {
     const text = [...dl.children].reduce((acc, x, i, arr) => i % 2 ? acc : acc + x.textContent + ": " + arr[i+1].textContent + "\n", s.name + "\n");
