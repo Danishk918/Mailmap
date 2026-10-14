@@ -7,6 +7,7 @@ abonnert på. Mange kan du melde deg av direkte herfra. Noen krever at du bekref
 sender allows it, on the sender's own page where it doesn't. No server; everything runs in your browser.*
 
 **Prøv den:** [danishk918.github.io/Mailmap](https://danishk918.github.io/Mailmap/) – «Prøv uten å logge inn» viser en demo med eksempeldata.
+[Personvernerklæring](https://danishk918.github.io/Mailmap/personvern.html)
 
 ![Mailmap på PC og mobil: liste over nyhetsbrev med Meld av-knapper, et SENDT-stempel og en avsender merket «Må gjøres manuelt»](docs/preview.png)
 
