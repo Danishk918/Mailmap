@@ -319,3 +319,9 @@ def test_registered_redirect_address_is_used_exactly(open_app, base_url):
     assert fake.google_auth[0]["redirect_uri"] == [base_url]
     other, fake2 = open_app(basic_inbox(), "google", config={"redirectUri": "https://elsewhere.example/Mailmap/"})
     assert fake2.google_auth[0]["redirect_uri"] == [base_url]   # another site's address is never used here
+
+
+def test_google_user_cap_is_stated_up_front(open_app):
+    page, _ = open_app(provider=None)
+    cap = page.inner_text("#gCap")
+    assert page.is_visible("#gCap") and "100 brukere" in cap and "Outlook" in cap

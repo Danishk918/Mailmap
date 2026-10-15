@@ -66,6 +66,7 @@ pytest -q
 
 - Google: Appen er publisert, men ikke verifisert. Alle kan logge inn, men ser først «Google har ikke verifisert denne
   appen» (trykk *Avansert* → *Gå til …*). Uverifiserte apper er begrenset til 100 Gmail-brukere for hele appens levetid.
+  Siden sier dette under Google-knappen, så ingen tror det er Mailmap som feiler hvis plassene blir brukt opp.
   Å fjerne varselet og grensen krever at Google verifiserer appen, og fordi `gmail.metadata` er et «restricted scope»,
   også en betalt sikkerhetsvurdering (CASA). Microsoft-innloggingen har ingen slik grense.
 - Ved ett-klikks avmelding kan ikke nettleseren lese svaret fra avsenderen (CORS), så siden vet at forespørselen ble sendt,
