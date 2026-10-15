@@ -601,6 +601,8 @@ function subRow(s){
     try { await navigator.clipboard.writeText(text); toast("Detaljene er kopiert."); } catch { toast("Kopiering ble blokkert av nettleseren."); }
   };
   det.append(cp);
+  // Phone: no separate "Detaljer" line – tapping the sender's name opens the details.
+  who.onclick = () => { if (PHONE.matches) det.open = !det.open; };
   li.append(who, act, det);
   return li;
 }
@@ -638,6 +640,8 @@ async function run(list){
   else if (ok && !bad) toast(`Avmelding sendt til ${ok === 1 ? "1 avsender" : ok + " avsendere"}. Sjekk hver enkelt hos avsenderen for å være sikker.`);
   else if (bad) toast(`${bad} feilet. Trykk «Prøv igjen».`);
 }
+
+const PHONE = matchMedia("(max-width:480px)");
 
 /* ================================================================ analytics */
 // Anonymous counts sent straight to GoatCounter: no third-party script, no cookies.

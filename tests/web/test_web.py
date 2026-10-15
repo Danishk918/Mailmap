@@ -188,8 +188,18 @@ def test_google_warning_is_explained_before_the_popup(open_app):
 
 def test_demo_fits_a_phone_screen(open_app):
     page, _ = open_app(provider="demo", viewport={"width": 390, "height": 844})
+    r = row(page, "Reiseportalen")
+    name, btn = r.locator(".who b").bounding_box(), r.get_by_role("button", name="Meld av").bounding_box()
+    assert btn["y"] < name["y"] + name["height"] and btn["x"] > name["x"]   # button beside the name, not below
+    assert r.bounding_box()["height"] < 90                                    # compact rows: many per screen
+    assert not r.locator(".ava").is_visible() and r.locator("summary").bounding_box()["width"] <= 1   # no "Detaljer" line
+    r.locator(".who").click()                                                  # tapping the name opens the details
+    assert r.locator("details").get_attribute("open") is not None
     row(page, "Morgenavisa").get_by_role("button", name="Meld av").click()
     page.wait_for_timeout(500)
+    page.mouse.wheel(0, 900)
+    page.wait_for_timeout(300)
+    assert -1 <= page.locator(".filters").bounding_box()["y"] <= 1             # tabs and search follow the scroll
     assert page.evaluate("document.documentElement.scrollWidth") <= 390
     assert page.errors == []
 

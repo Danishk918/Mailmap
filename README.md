@@ -51,7 +51,7 @@ To sett med tester kjører automatisk på GitHub ved hver endring:
 
 - **Nettsiden** (`tests/web`, 25 tester): siden kjøres i en ekte nettleser (Chromium) mot falske Google- og
   Microsoft-tjenester, så det trengs ingen kontoer eller nett. Dekker innlogging (PKCE, og Google i samme fane med avvisning av falske returer), lesing kun av headere,
-  avmelding (RFC 8058 `POST` og e-post), «Velg alle» og søk med 60 avsendere, Googles fartsgrense (ny forsøk, tidlig liste, delvise resultater), oppfølging («Sender fortsatt»),
+  avmelding (RFC 8058 `POST` og e-post), «Velg alle» og søk med 60 avsendere, mobilvisningen (kompakte rader, faste faner, ingen sidelengs scrolling), Googles fartsgrense (ny forsøk, tidlig liste, delvise resultater), oppfølging («Sender fortsatt»),
   og sikkerhet: XSS i avsendernavn og emne, `javascript:`-lenker, header-injeksjon i `mailto:`, forfalskede
   avsendernavn, at bare Outlook/Gmail-lenker godtas, at den strenge CSP-en ikke blokkerer noe siden trenger, og at besøkstellingen aldri får med e-postadresser, avsendere eller innloggingskoder.
 - **[Kommandolinjeversjonen](docs/KOMMANDOLINJE.md)** (`tests/test_mailmap.py`, 18 tester), på Python 3.10, 3.12 og 3.13.
@@ -89,6 +89,7 @@ pytest -q
 - **Ingen rammeverk og ingen byggesteg:** ren HTML, CSS og JavaScript i `web/`, publisert med GitHub Pages.
 - **Innlogging:** Google (OAuth 2.0, tokenflyt med retur til siden) og Microsoft (Authorization Code + PKCE), begge i samme fane, direkte fra nettleseren.
 - **API-er:** Gmail API (kun `format=metadata`) og Microsoft Graph (`internetMessageHeaders`).
+- **Mobil:** egen visning for telefon: kompakte rader med knappen ved siden av navnet, faner og søk som følger med når du scroller, og detaljer som åpnes ved å trykke på avsenderen.
 - **Statistikk:** anonym telling til GoatCounter via `stats` i `config.js` (fjern linjen for å slå av, f.eks. i en fork).
 - **Deling:** Open Graph-tagger og eget delingsbilde (`web/og.png`), så lenken vises som et kort på LinkedIn.
 

@@ -173,13 +173,43 @@ h2{font:800 clamp(32px,7vw,42px)/1 var(--display);margin:0;text-wrap:balance}
   border-radius:8px;padding:11px 16px;font-size:15px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .2s;max-width:calc(100% - 32px)}
 .toast.on{opacity:1}
 
+/* Phone: compact rows (name left, button right on the same line), filters that follow you while scrolling,
+   a small "Sendt" badge instead of the big postmark, and larger checkboxes for thumbs. */
 @media (max-width:480px){
-  .det{margin-left:0}
+  .mast{padding-block:14px 22px}
+  .acct{margin-bottom:14px}
+  .demo,.checknote,.scannote{font-size:14px;padding:8px 12px;margin-top:10px;line-height:1.45}
+  .demo{margin-bottom:16px}
+  .manualnote{font-size:15px;margin-top:6px}
+  .filters{position:sticky;top:0;z-index:5;background:var(--paper);margin:12px -16px 0;padding:10px 16px 2px;border-bottom:2px solid transparent}
+  .tabs{margin:0 0 10px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs button{flex:none;padding:5px 13px;min-height:40px}
+  .tools{margin:0 0 8px;gap:10px;flex-wrap:nowrap}
+  .tools input[type=search]{flex:1 1 auto;min-height:44px}
+  .all{padding-left:4px;min-height:44px;white-space:nowrap}
+  .row{padding:12px;gap:12px}
+  .ava{display:none}
+  .row input[type=checkbox],.all input{width:28px;height:28px}
+  .cbspace{width:28px}
+  .who b{font-size:16px}
+  .who span{font-size:14px}
+  .act{width:auto;padding-left:0}
+  .act .btn{padding:8px 12px;min-height:44px}
+  .row:has(.state:not(.wait)) .act,.row:has(.flag) .act{flex-basis:100%;padding-left:40px}
+  .state{width:auto;height:auto;margin:0;padding:6px 10px;border:2px solid var(--red);border-radius:999px;transform:none;
+    animation:none;font:700 13px/1 var(--body);letter-spacing:.02em;text-transform:none}
+  .who .hint{font-size:13px;padding:6px 9px;margin-top:6px}
+  .row{row-gap:8px}
+  .det{margin-left:40px;font-size:13px}
+  .det summary{padding:0}
+  .det:not([open]) summary{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+  .row:has(.det) .who{cursor:pointer}
+  .row:has(.det) .who b::after{content:"";display:inline-block;width:7px;height:7px;margin-left:8px;vertical-align:2px;
+    border-right:2px solid var(--mute);border-bottom:2px solid var(--mute);transform:rotate(-45deg);transition:transform .15s}
+  .row:has(.det[open]) .who b::after{transform:rotate(45deg)}
+  .toast{left:16px;right:16px;transform:none;text-align:center}
   .det dl{grid-template-columns:minmax(0,1fr)}
-  .mast{padding-block:14px 28px}
-  .row{flex-wrap:wrap}
-  .act{width:100%;padding-left:98px}
-  .state{margin:0}
 }
 </style>
 
@@ -242,6 +272,7 @@ h2{font:800 clamp(32px,7vw,42px)/1 var(--display);margin:0;text-wrap:balance}
     <p class="manualnote" id="manualNote" hidden></p>
     <p class="checknote" id="checkNote" hidden></p>
     <div class="scannote" id="scanNote" role="status" hidden><span id="scanText"></span> <button class="btn quiet" id="scanStop">Stopp lesingen</button></div>
+    <div class="filters">
     <div class="tabs" id="tabs" role="group" aria-label="Vis">
       <button data-v="sub" aria-pressed="true"></button>
       <button data-v="done" aria-pressed="false"></button>
@@ -250,6 +281,7 @@ h2{font:800 clamp(32px,7vw,42px)/1 var(--display);margin:0;text-wrap:balance}
     <div class="tools">
       <label class="all" id="allWrap"><input type="checkbox" id="all"><span id="allText">Velg alle</span></label>
       <input type="search" id="q" placeholder="Søk etter avsender" aria-label="Søk etter avsender" autocomplete="off">
+    </div>
     </div>
     <ul class="list" id="list"></ul>
     <button class="btn quiet showmore" id="more" hidden></button>
